@@ -61,6 +61,20 @@
             <p id="coordinates" class="coordinates">—</p>
           </div>
 
+          <div class="panel-section roadmap-section">
+            <p class="panel-label">ANALYSIS ROADMAP</p>
+            <ul class="layer-list analysis-roadmap" aria-label="HyperFlood analysis roadmap">
+              <li id="roadmapTerrain" class="roadmap-item pending"><span class="roadmap-number">01</span><span class="roadmap-name">Elevation &amp; terrain</span><span class="roadmap-state" aria-label="Waiting"></span></li>
+              <li id="roadmapTrends" class="roadmap-item pending"><span class="roadmap-number">02</span><span class="roadmap-name">NASA historical trends + proxy</span><span class="roadmap-state" aria-label="Waiting"></span></li>
+              <li id="roadmapSoil" class="roadmap-item pending"><span class="roadmap-number">03</span><span class="roadmap-name">Soil wetness + runoff potential</span><span class="roadmap-state" aria-label="Waiting"></span></li>
+              <li class="roadmap-item future"><span class="roadmap-number">04</span><span class="roadmap-name">Rivers &amp; drainage</span><span class="roadmap-state" aria-label="Planned"></span></li>
+              <li class="roadmap-item future"><span class="roadmap-number">05</span><span class="roadmap-name">Recent precipitation</span><span class="roadmap-state" aria-label="Planned"></span></li>
+              <li class="roadmap-item future"><span class="roadmap-number">06</span><span class="roadmap-name">24h / 48h / 7-day precipitation forecast</span><span class="roadmap-state" aria-label="Planned"></span></li>
+              <li class="roadmap-item future"><span class="roadmap-number">07</span><span class="roadmap-name">Surface water indicators</span><span class="roadmap-state" aria-label="Planned"></span></li>
+              <li class="roadmap-item future"><span class="roadmap-number">08</span><span class="roadmap-name">Explainable flood-risk assessment</span><span class="roadmap-state" aria-label="Planned"></span></li>
+            </ul>
+          </div>
+
           <div class="panel-section terrain-section">
             <p class="panel-label">ELEVATION &amp; TERRAIN INTELLIGENCE</p>
             <p id="terrainStatus" class="terrain-status">Select a point to analyse the surrounding terrain.</p>
@@ -137,18 +151,6 @@
             <p id="soilSourceNote" class="data-note">NASA POWER soil wetness uses MERRA-2-based surface and root-zone wetness. This is a derived prototype index, not a measured infiltration rate or flood probability.</p>
           </div>
 
-          <div class="panel-section">
-            <p class="panel-label">ANALYSIS ROADMAP</p>
-            <ul class="layer-list">
-              <li class="layer-active"><span>01</span> Elevation &amp; terrain ✓</li>
-              <li class="layer-active"><span>02</span> NASA historical trends + proxy ✓</li>
-              <li class="layer-active"><span>03</span> Soil wetness + runoff potential ✓</li>
-              <li><span>04</span> Rivers &amp; drainage</li>
-              <li><span>05</span> Recent precipitation</li>
-              <li><span>06</span> 24h / 48h / 7-day precipitation forecast</li>
-              <li><span>07</span> Surface water indicators</li>
-              <li><span>08</span> Explainable flood-risk assessment</li>
-            </ul>
           </div>
 
           <div class="warning-card prototype-warning">

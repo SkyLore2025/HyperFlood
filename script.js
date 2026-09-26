@@ -446,15 +446,20 @@ async function analyseTerrain(lat, lon) {
   }
 
   renderTerrainLoading();
+  setRoadmapState("terrain", "loading");
 
   try {
     const points = buildTerrainGrid(lat, lon);
     const elevations = await fetchTerrainElevations(points);
     if (requestId !== terrainRequestId) return;
     renderTerrain(calculateTerrainMetrics(elevations));
+    setRoadmapState("terrain", "done");
   } catch (error) {
     console.error("Terrain analysis error:", error);
-    if (requestId === terrainRequestId) renderTerrainError();
+    if (requestId === terrainRequestId) {
+      renderTerrainError();
+      setRoadmapState("terrain", "error");
+    }
   }
 }
 
@@ -465,6 +470,37 @@ updateAnalysisPoint = function(lat, lon, label) {
   originalUpdateAnalysisPoint(lat, lon, label);
   analyseTerrain(lat, lon);
 };
+
+// ==========================================================
+// LIVE ANALYSIS ROADMAP
+// Each active analysis starts with a rotating loader and changes
+// to a tick only after its data has actually loaded.
+// ==========================================================
+const roadmapItems = {
+  terrain: document.getElementById("roadmapTerrain"),
+  trends: document.getElementById("roadmapTrends"),
+  soil: document.getElementById("roadmapSoil")
+};
+
+function setRoadmapState(key, state) {
+  const item = roadmapItems[key];
+  if (!item) return;
+  item.classList.remove("pending", "loading", "done", "error");
+  item.classList.add(state);
+  const stateLabel = item.querySelector(".roadmap-state");
+  if (stateLabel) {
+    stateLabel.setAttribute(
+      "aria-label",
+      state === "done" ? "Complete" : state === "loading" ? "Loading" : state === "error" ? "Unavailable" : "Waiting"
+    );
+  }
+}
+
+function resetRoadmapForPoint() {
+  setRoadmapState("terrain", "loading");
+  setRoadmapState("trends", "loading");
+  setRoadmapState("soil", "loading");
+}
 
 // ==========================================================
 // v5 FIXED EARLY-WARNING PLACEHOLDER BAR
@@ -652,9 +688,10 @@ function renderTrend() {
 async function analyseHistoricalTrends(lat,lon){
   if(!trendStatus)return; const requestId=++trendRequestId; currentAnalysisLat=lat;currentAnalysisLon=lon;
   trendStatus.textContent="Contacting NASA POWER and building the historical time series…";
+  setRoadmapState("trends", "loading");
   trendFinding.className="trend-finding neutral";trendFinding.querySelector("strong").textContent="ANALYSING NASA DATA";trendFinding.querySelector("p").textContent="Aggregating monthly observations into complete annual values and calculating a linear trend.";
-  try{const raw=await fetchNasaPowerMonthly(lat,lon,Number(trendPeriod.value));if(requestId!==trendRequestId)return;trendData=monthlyToAnnual(raw);if(trendData.length<5)throw new Error("Not enough complete annual observations.");trendStatus.textContent=`NASA historical analysis complete: ${trendData.length} complete years.`;renderTrend();}
-  catch(e){console.error("NASA trend analysis error:",e);if(requestId!==trendRequestId)return;trendData=null;trendStatus.textContent="NASA historical data could not be loaded for this point.";trendYears.textContent=trendSlope.textContent=trendChange.textContent=trendSignificance.textContent="—";trendFinding.className="trend-finding neutral";trendFinding.querySelector("strong").textContent="DATA UNAVAILABLE";trendFinding.querySelector("p").textContent="The NASA proxy could not return usable historical data. Terrain analysis and the rest of HyperFlood remain available.";}
+  try{const raw=await fetchNasaPowerMonthly(lat,lon,Number(trendPeriod.value));if(requestId!==trendRequestId)return;trendData=monthlyToAnnual(raw);if(trendData.length<5)throw new Error("Not enough complete annual observations.");trendStatus.textContent=`NASA historical analysis complete: ${trendData.length} complete years.`;renderTrend();setRoadmapState("trends", "done");}
+  catch(e){console.error("NASA trend analysis error:",e);if(requestId!==trendRequestId)return;trendData=null;trendStatus.textContent="NASA historical data could not be loaded for this point.";trendYears.textContent=trendSlope.textContent=trendChange.textContent=trendSignificance.textContent="—";trendFinding.className="trend-finding neutral";trendFinding.querySelector("strong").textContent="DATA UNAVAILABLE";trendFinding.querySelector("p").textContent="The NASA proxy could not return usable historical data. Terrain analysis and the rest of HyperFlood remain available.";setRoadmapState("trends", "error");}
 }
 
 trendTabs.forEach(btn=>btn.addEventListener("click",()=>{trendTabs.forEach(b=>b.classList.remove("active"));btn.classList.add("active");trendVariable=btn.dataset.variable;renderTrend();}));
@@ -779,12 +816,17 @@ async function fetchNasaSoil(lat, lon) {
 async function analyseSoilRunoff(lat, lon) {
   const requestId = ++soilRequestId;
   renderSoilLoading();
+  setRoadmapState("soil", "loading");
   try {
     const soil = await fetchNasaSoil(lat, lon);
     if (requestId !== soilRequestId) return;
     renderSoil(soil);
+    setRoadmapState("soil", "done");
   } catch (error) {
-    if (requestId === soilRequestId) renderSoilError(error);
+    if (requestId === soilRequestId) {
+      renderSoilError(error);
+      setRoadmapState("soil", "error");
+    }
   }
 }
 
@@ -792,6 +834,7 @@ async function analyseSoilRunoff(lat, lon) {
 // refreshes the soil/runoff intelligence as well.
 const v9UpdateAnalysisPoint = updateAnalysisPoint;
 updateAnalysisPoint = function(lat, lon, label) {
+  resetRoadmapForPoint();
   v9UpdateAnalysisPoint(lat, lon, label);
   analyseSoilRunoff(lat, lon);
 };

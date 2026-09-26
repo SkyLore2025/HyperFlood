@@ -342,3 +342,89 @@ body { overflow: hidden; }
 .runoff-finding.high { background:#fff0df; border-color:#efc28c; }
 .runoff-finding.neutral { background:#f5f8fa; border-color:#d5e1e7; }
 @media (max-width:700px){ .soil-grid{grid-template-columns:1fr 1fr;} }
+
+/* ==========================================================
+   ANALYSIS ROADMAP — live loading state
+   ========================================================== */
+.roadmap-section { order: -1; }
+.analysis-roadmap { margin: 0; }
+.analysis-roadmap .roadmap-item {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) 20px;
+  align-items: center;
+  gap: 10px;
+  min-height: 42px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--line);
+  color: #6b7b88;
+  transition: color .2s ease, opacity .2s ease;
+}
+.analysis-roadmap .roadmap-item:last-child { border-bottom: 0; }
+.roadmap-number {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #eef4f7;
+  color: #70818d;
+  font-size: 11px;
+  font-weight: 850;
+}
+.roadmap-name { font-size: 13px; line-height: 1.35; }
+.roadmap-item.done { color: var(--navy); }
+.roadmap-item.done .roadmap-number { background: #dff3e5; color: #267342; }
+.roadmap-item.loading { color: var(--navy); }
+.roadmap-item.loading .roadmap-number { background: #e4f4f9; color: var(--blue); }
+.roadmap-item.future { opacity: .55; }
+.roadmap-state {
+  width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+  justify-self: end;
+  position: relative;
+}
+.roadmap-item.pending .roadmap-state::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border: 2px solid #b9c7cf;
+  border-radius: 50%;
+}
+.roadmap-item.future .roadmap-state::before {
+  content: "";
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #c7d2d8;
+}
+.roadmap-item.loading .roadmap-state::before {
+  content: "";
+  width: 14px;
+  height: 14px;
+  border: 2px solid #cfe5ec;
+  border-top-color: var(--cyan);
+  border-radius: 50%;
+  animation: roadmap-spin .75s linear infinite;
+}
+.roadmap-item.done .roadmap-state::before {
+  content: "✓";
+  color: #23814b;
+  font-size: 17px;
+  line-height: 1;
+  font-weight: 900;
+}
+.roadmap-item.error .roadmap-state::before {
+  content: "!";
+  width: 17px;
+  height: 17px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #fff1df;
+  color: #b76b16;
+  font-size: 11px;
+  font-weight: 900;
+}
+@keyframes roadmap-spin { to { transform: rotate(360deg); } }
