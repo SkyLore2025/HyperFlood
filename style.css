@@ -322,3 +322,23 @@ body { overflow: hidden; }
 .trend-finding.down { background:#eef9f2; border-color:#bee2ca; }
 .trend-finding.flat { background:#f7f7f4; border-color:#deded4; }
 @media (max-width:700px){ .trend-grid{grid-template-columns:1fr 1fr;} #trendChart{height:160px;} }
+
+
+/* =========================================================
+   v9 — SOIL & RUNOFF INTELLIGENCE
+   ========================================================= */
+.soil-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
+.soil-heading h3 { margin-top:3px; }
+.soil-badge { padding:5px 8px; border-radius:999px; font-size:9px; font-weight:900; letter-spacing:.06em; border:1px solid #d5e1e7; background:#f5f8fa; color:#607783; white-space:nowrap; }
+.soil-badge.low { background:#e9f7ee; border-color:#b9dfc5; color:#21683a; }
+.soil-badge.moderate { background:#fff6cf; border-color:#e9da86; color:#665408; }
+.soil-badge.high { background:#ffe3c5; border-color:#efbd7e; color:#743b08; }
+.soil-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:10px; }
+.runoff-finding { margin-top:10px; border-radius:10px; padding:11px 12px; border:1px solid #d5e1e7; background:#f5f8fa; }
+.runoff-finding strong { font-size:12px; letter-spacing:.04em; }
+.runoff-finding p { margin:5px 0 0; font-size:12px; line-height:1.45; }
+.runoff-finding.low { background:#eef9f2; border-color:#bee2ca; }
+.runoff-finding.moderate { background:#fff9df; border-color:#e8d98a; }
+.runoff-finding.high { background:#fff0df; border-color:#efc28c; }
+.runoff-finding.neutral { background:#f5f8fa; border-color:#d5e1e7; }
+@media (max-width:700px){ .soil-grid{grid-template-columns:1fr 1fr;} }

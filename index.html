@@ -27,8 +27,8 @@
         </form>
 
         <div class="prototype-note">
-          <strong>Prototype v7</strong>
-          <span>Global map + Terrain Intelligence + NASA Historical Trend Detective + serverless NASA data proxy</span>
+          <strong>Prototype v9</strong>
+          <span>Global map + Terrain Intelligence + NASA Trend Detective + Soil/Runoff Intelligence + serverless NASA data proxy</span>
         </div>
       </div>
     </section>
@@ -114,12 +114,35 @@
             <p class="data-note">Historical source: NASA POWER. Precipitation is derived from GPM IMERG; temperature is derived from MERRA-2. Trend significance uses a two-sided linear-regression test (p &lt; 0.05).</p>
           </div>
 
+
+          <div class="panel-section soil-section">
+            <div class="soil-heading">
+              <div>
+                <p class="panel-label">SOIL &amp; RUNOFF INTELLIGENCE</p>
+                <h3>Infiltration pressure</h3>
+              </div>
+              <span id="soilBadge" class="soil-badge neutral">WAITING</span>
+            </div>
+            <p id="soilStatus" class="terrain-status">Select a point to analyse NASA surface and root-zone wetness.</p>
+            <div class="soil-grid">
+              <div class="terrain-metric"><span>Surface wetness</span><strong id="surfaceWetness">—</strong></div>
+              <div class="terrain-metric"><span>Root-zone wetness</span><strong id="rootWetness">—</strong></div>
+              <div class="terrain-metric"><span>Infiltration potential</span><strong id="infiltrationPotential">—</strong></div>
+              <div class="terrain-metric"><span>Runoff potential</span><strong id="runoffPotential">—</strong></div>
+            </div>
+            <div id="runoffFinding" class="runoff-finding neutral">
+              <strong>WAITING FOR SOIL DATA</strong>
+              <p>HyperFlood will combine soil wetness with terrain position and slope to estimate runoff pressure.</p>
+            </div>
+            <p id="soilSourceNote" class="data-note">NASA POWER soil wetness uses MERRA-2-based surface and root-zone wetness. This is a derived prototype index, not a measured infiltration rate or flood probability.</p>
+          </div>
+
           <div class="panel-section">
             <p class="panel-label">ANALYSIS ROADMAP</p>
             <ul class="layer-list">
               <li class="layer-active"><span>01</span> Elevation &amp; terrain ✓</li>
               <li class="layer-active"><span>02</span> NASA historical trends + proxy ✓</li>
-              <li><span>03</span> Soil infiltration / runoff potential</li>
+              <li class="layer-active"><span>03</span> Soil wetness + runoff potential ✓</li>
               <li><span>04</span> Rivers &amp; drainage</li>
               <li><span>05</span> Recent precipitation</li>
               <li><span>06</span> 24h / 48h / 7-day precipitation forecast</li>
@@ -131,7 +154,7 @@
           <div class="warning-card prototype-warning">
             <p class="panel-label">HYPERFLOOD STATUS</p>
             <h3>Terrain layer active</h3>
-            <p>This is not yet a flood warning. The final assessment will combine terrain with rainfall, soil/runoff, drainage and surface-water information.</p>
+            <p>This is not yet a flood warning. Soil/runoff pressure is a derived prototype layer. The final assessment will combine terrain, rainfall, drainage, surface water and forecast information.</p>
           </div>
         </aside>
       </div>

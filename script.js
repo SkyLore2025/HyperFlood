@@ -664,3 +664,134 @@ window.addEventListener("resize",()=>{if(trendData)renderTrend();});
 // Add the v6 historical investigation to every search, map click and marker drag.
 const v6UpdateAnalysisPoint = updateAnalysisPoint;
 updateAnalysisPoint = function(lat,lon,label){v6UpdateAnalysisPoint(lat,lon,label);analyseHistoricalTrends(lat,lon);};
+
+
+// ==========================================================
+// v9 — SOIL & RUNOFF INTELLIGENCE
+// ==========================================================
+const soilStatus = document.getElementById("soilStatus");
+const surfaceWetness = document.getElementById("surfaceWetness");
+const rootWetness = document.getElementById("rootWetness");
+const infiltrationPotential = document.getElementById("infiltrationPotential");
+const runoffPotential = document.getElementById("runoffPotential");
+const runoffFinding = document.getElementById("runoffFinding");
+const soilBadge = document.getElementById("soilBadge");
+const soilSourceNote = document.getElementById("soilSourceNote");
+let soilRequestId = 0;
+
+function clamp01(v) { return Math.max(0, Math.min(1, Number(v) || 0)); }
+
+function soilClass(value) {
+  if (value >= 0.70) return "high";
+  if (value >= 0.45) return "moderate";
+  return "low";
+}
+
+function calculateRunoffPrototype(soil, terrainText, positionText, slopeText) {
+  const wet = clamp01(soil.surfaceWetness);
+  const root = clamp01(soil.rootZoneWetness);
+  const slope = Number.parseFloat(String(slopeText).replace("°", ""));
+
+  // Wet soil increases runoff pressure because less additional rainfall can
+  // be absorbed. This is intentionally a transparent heuristic, not a
+  // calibrated hydrological model or flood probability.
+  const wetnessPressure = wet * 55 + root * 20;
+  const rainPressure = Math.min(20, Math.max(0, soil.precipitationApproxMm / 150 * 20));
+  const lowlandPressure = /low-lying/i.test(positionText) ? 18 : /near local average/i.test(positionText) ? 7 : 0;
+  const slopeDrainage = Number.isFinite(slope) ? Math.min(12, slope * 0.9) : 3;
+
+  // Higher slope can move water away from the selected point, so it reduces
+  // local accumulation pressure rather than simply increasing runoff risk.
+  const drainageRelief = Math.min(10, slopeDrainage);
+  const score = Math.max(0, Math.min(100, wetnessPressure + rainPressure + lowlandPressure - drainageRelief));
+
+  let runoff = "LOW";
+  let cls = "low";
+  if (score >= 62) { runoff = "HIGH"; cls = "high"; }
+  else if (score >= 38) { runoff = "MODERATE"; cls = "moderate"; }
+
+  const infiltration = wet >= 0.75 ? "LOW" : wet >= 0.50 ? "MODERATE" : "HIGH";
+  return { score, runoff, cls, infiltration };
+}
+
+function renderSoilLoading() {
+  soilStatus.textContent = "Contacting NASA POWER for soil wetness data…";
+  surfaceWetness.textContent = rootWetness.textContent = infiltrationPotential.textContent = runoffPotential.textContent = "…";
+  soilBadge.className = "soil-badge neutral";
+  soilBadge.textContent = "ANALYSING";
+  runoffFinding.className = "runoff-finding neutral";
+  runoffFinding.querySelector("strong").textContent = "ANALYSING SOIL PRESSURE";
+  runoffFinding.querySelector("p").textContent = "Combining NASA soil wetness with the local terrain layer.";
+}
+
+function renderSoil(soil) {
+  surfaceWetness.textContent = `${(soil.surfaceWetness * 100).toFixed(0)}%`;
+  rootWetness.textContent = `${(soil.rootZoneWetness * 100).toFixed(0)}%`;
+  const result = calculateRunoffPrototype(
+    soil,
+    terrainClass?.textContent || "",
+    positionClass?.textContent || "",
+    slopeValue?.textContent || ""
+  );
+  infiltrationPotential.textContent = result.infiltration;
+  runoffPotential.textContent = result.runoff;
+  soilBadge.className = `soil-badge ${result.cls}`;
+  soilBadge.textContent = `${result.runoff} PRESSURE`;
+  runoffFinding.className = `runoff-finding ${result.cls}`;
+  runoffFinding.querySelector("strong").textContent = `${result.runoff} RUNOFF POTENTIAL`;
+
+  const terrainPart = positionClass?.textContent === "Low-lying"
+    ? " The point is locally low-lying, which can favour accumulation."
+    : "";
+  const slopePart = Number.parseFloat(String(slopeValue?.textContent || "")) >= 5
+    ? " Local slope may help drain water away from the point."
+    : " Local terrain is relatively gentle, so drainage may depend more on soil and waterways.";
+  runoffFinding.querySelector("p").textContent =
+    `NASA surface wetness is ${(soil.surfaceWetness * 100).toFixed(0)}% and root-zone wetness is ${(soil.rootZoneWetness * 100).toFixed(0)}%.${terrainPart}${slopePart} This derived index is an exploratory runoff-pressure signal, not a flood probability.`;
+  soilStatus.textContent = `NASA POWER soil/runoff inputs available for ${soil.period}.`;
+  soilSourceNote.textContent = `NASA POWER: surface soil wetness (0–5 cm) and root-zone wetness, with precipitation for ${soil.period}. Approx. monthly precipitation: ${soil.precipitationApproxMm.toFixed(0)} mm. Infiltration/runoff labels are derived by HyperFlood and are not direct NASA measurements.`;
+}
+
+function renderSoilError(error) {
+  console.error("Soil/runoff analysis error:", error);
+  soilStatus.textContent = "NASA soil wetness data could not be loaded for this point.";
+  surfaceWetness.textContent = rootWetness.textContent = infiltrationPotential.textContent = runoffPotential.textContent = "—";
+  soilBadge.className = "soil-badge neutral";
+  soilBadge.textContent = "UNAVAILABLE";
+  runoffFinding.className = "runoff-finding neutral";
+  runoffFinding.querySelector("strong").textContent = "DATA UNAVAILABLE";
+  runoffFinding.querySelector("p").textContent = "Terrain analysis and the NASA historical trend layer remain available. Try again later.";
+}
+
+async function fetchNasaSoil(lat, lon) {
+  const url = new URL("/api/power", window.location.origin);
+  url.searchParams.set("mode", "soil");
+  url.searchParams.set("lat", Number(lat).toFixed(5));
+  url.searchParams.set("lon", Number(lon).toFixed(5));
+  const response = await fetch(url.toString(), { headers: { Accept: "application/json" }, cache: "no-store" });
+  const text = await response.text();
+  let data = null;
+  try { data = JSON.parse(text); } catch (_) {}
+  if (!response.ok || !data?.ok) throw new Error(data?.error || data?.detail || text.slice(0,250));
+  return data;
+}
+
+async function analyseSoilRunoff(lat, lon) {
+  const requestId = ++soilRequestId;
+  renderSoilLoading();
+  try {
+    const soil = await fetchNasaSoil(lat, lon);
+    if (requestId !== soilRequestId) return;
+    renderSoil(soil);
+  } catch (error) {
+    if (requestId === soilRequestId) renderSoilError(error);
+  }
+}
+
+// Hook v9 after the v6 update wrapper so every search, click and marker drag
+// refreshes the soil/runoff intelligence as well.
+const v9UpdateAnalysisPoint = updateAnalysisPoint;
+updateAnalysisPoint = function(lat, lon, label) {
+  v9UpdateAnalysisPoint(lat, lon, label);
+  analyseSoilRunoff(lat, lon);
+};
