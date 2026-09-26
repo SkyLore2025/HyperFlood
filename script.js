@@ -505,3 +505,127 @@ function setWarningSeverity(level = "normal") {
   levels.forEach(item => warningBar.classList.remove(`severity-${item}`));
   warningBar.classList.add(`severity-${safeLevel}`);
 }
+
+// ==========================================================
+// v6 NASA EARTH SYSTEM TREND DETECTIVE
+// Historical monthly NASA POWER data -> annual series -> linear trend.
+// ==========================================================
+const trendPeriod = document.getElementById("trendPeriod");
+const trendStatus = document.getElementById("trendStatus");
+const trendTabs = document.querySelectorAll(".trend-tab");
+const trendChart = document.getElementById("trendChart");
+const trendYears = document.getElementById("trendYears");
+const trendSlope = document.getElementById("trendSlope");
+const trendChange = document.getElementById("trendChange");
+const trendSignificance = document.getElementById("trendSignificance");
+const trendFinding = document.getElementById("trendFinding");
+let trendVariable = "rain";
+let trendData = null;
+let trendRequestId = 0;
+let currentAnalysisLat = null;
+let currentAnalysisLon = null;
+
+async function fetchNasaPowerMonthly(lat, lon, yearsBack) {
+  const endYear = new Date().getUTCFullYear() - 1; // use complete calendar years only
+  const startYear = endYear - yearsBack + 1;
+  const url = new URL("https://power.larc.nasa.gov/api/temporal/monthly/point");
+  url.searchParams.set("parameters", "PRECTOTCORR,T2M");
+  url.searchParams.set("community", "AG");
+  url.searchParams.set("longitude", Number(lon).toFixed(5));
+  url.searchParams.set("latitude", Number(lat).toFixed(5));
+  url.searchParams.set("start", String(startYear));
+  url.searchParams.set("end", String(endYear));
+  url.searchParams.set("format", "JSON");
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`NASA POWER request failed (${response.status})`);
+  const json = await response.json();
+  const params = json?.properties?.parameter;
+  if (!params?.PRECTOTCORR || !params?.T2M) throw new Error("NASA POWER returned incomplete parameters.");
+  return { startYear, endYear, params };
+}
+
+function monthlyToAnnual(power) {
+  const rainByYear = {}, tempByYear = {};
+  for (const [key, value] of Object.entries(power.params.PRECTOTCORR)) {
+    if (!/^\d{6}$/.test(key) || Number(value) < -900) continue;
+    const y = key.slice(0,4); (rainByYear[y] ||= []).push(Number(value));
+  }
+  for (const [key, value] of Object.entries(power.params.T2M)) {
+    if (!/^\d{6}$/.test(key) || Number(value) < -900) continue;
+    const y = key.slice(0,4); (tempByYear[y] ||= []).push(Number(value));
+  }
+  const years = [];
+  for (let y=power.startYear; y<=power.endYear; y++) {
+    const k=String(y), r=rainByYear[k], t=tempByYear[k];
+    if (r?.length===12 && t?.length===12) {
+      // POWER monthly PRECTOTCORR is mm/day. Convert each monthly mean rate
+      // to approximate annual total using calendar days in that month.
+      const annualRain = r.reduce((sum, rate, i) => sum + rate * new Date(y, i+1, 0).getDate(), 0);
+      const annualTemp = t.reduce((a,b)=>a+b,0)/12;
+      years.push({year:y, rain:annualRain, temp:annualTemp});
+    }
+  }
+  return years;
+}
+
+function logGamma(z) {
+  const c=[676.5203681218851,-1259.1392167224028,771.32342877765313,-176.61502916214059,12.507343278686905,-0.13857109526572012,9.984369578019571e-6,1.5056327351493116e-7];
+  if(z<0.5) return Math.log(Math.PI)-Math.log(Math.sin(Math.PI*z))-logGamma(1-z);
+  z-=1; let x=0.9999999999998099; for(let i=0;i<c.length;i++) x+=c[i]/(z+i+1);
+  const t=z+c.length-0.5; return 0.5*Math.log(2*Math.PI)+(z+0.5)*Math.log(t)-t+Math.log(x);
+}
+function betaCF(a,b,x){ let qab=a+b,qap=a+1,qam=a-1,c=1,d=1-qab*x/qap;if(Math.abs(d)<3e-7)d=3e-7;d=1/d;let h=d;for(let m=1;m<=100;m++){let m2=2*m,aa=m*(b-m)*x/((qam+m2)*(a+m2));d=1+aa*d;if(Math.abs(d)<3e-7)d=3e-7;c=1+aa/c;if(Math.abs(c)<3e-7)c=3e-7;d=1/d;h*=d*c;aa=-(a+m)*(qab+m)*x/((a+m2)*(qap+m2));d=1+aa*d;if(Math.abs(d)<3e-7)d=3e-7;c=1+aa/c;if(Math.abs(c)<3e-7)c=3e-7;d=1/d;const del=d*c;h*=del;if(Math.abs(del-1)<3e-7)break;}return h;}
+function regIncompleteBeta(x,a,b){if(x<=0)return 0;if(x>=1)return 1;const bt=Math.exp(logGamma(a+b)-logGamma(a)-logGamma(b)+a*Math.log(x)+b*Math.log(1-x));return x<(a+1)/(a+b+2)?bt*betaCF(a,b,x)/a:1-bt*betaCF(b,a,1-x)/b;}
+function linearTrend(rows, key) {
+  const n=rows.length, xs=rows.map(r=>r.year), ys=rows.map(r=>r[key]);
+  const mx=xs.reduce((a,b)=>a+b,0)/n, my=ys.reduce((a,b)=>a+b,0)/n;
+  let sxx=0,sxy=0,syy=0; for(let i=0;i<n;i++){const dx=xs[i]-mx,dy=ys[i]-my;sxx+=dx*dx;sxy+=dx*dy;syy+=dy*dy;}
+  const slope=sxy/sxx, intercept=my-slope*mx, r=sxy/Math.sqrt(sxx*syy || 1);
+  const df=n-2; let p=1;
+  if(df>0 && Math.abs(r)<1){const t=Math.abs(r)*Math.sqrt(df/(1-r*r));p=regIncompleteBeta(df/(df+t*t),df/2,0.5);} else if(Math.abs(r)>=1) p=0;
+  return {slope,intercept,r,p,total:slope*(xs[n-1]-xs[0])};
+}
+
+function drawTrendChart(rows, key, fit) {
+  if(!trendChart) return; const ctx=trendChart.getContext("2d"), dpr=window.devicePixelRatio||1;
+  const w=trendChart.clientWidth||320,h=trendChart.clientHeight||180; trendChart.width=w*dpr;trendChart.height=h*dpr;ctx.scale(dpr,dpr);ctx.clearRect(0,0,w,h);
+  const pad={l:42,r:12,t:14,b:28}, vals=rows.map(r=>r[key]); let min=Math.min(...vals),max=Math.max(...vals); const extra=(max-min||1)*.12;min-=extra;max+=extra;
+  ctx.strokeStyle="#d9e4ea";ctx.lineWidth=1;ctx.fillStyle="#607783";ctx.font="10px sans-serif";
+  for(let i=0;i<4;i++){const y=pad.t+(h-pad.t-pad.b)*i/3;ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(w-pad.r,y);ctx.stroke();const v=max-(max-min)*i/3;ctx.fillText(key==="rain"?Math.round(v):v.toFixed(1),4,y+3);}
+  const xFor=i=>pad.l+(w-pad.l-pad.r)*i/(rows.length-1||1), yFor=v=>pad.t+(max-v)/(max-min)*(h-pad.t-pad.b);
+  ctx.strokeStyle="#1683a5";ctx.lineWidth=2;ctx.beginPath();rows.forEach((r,i)=>{const x=xFor(i),y=yFor(r[key]);i?ctx.lineTo(x,y):ctx.moveTo(x,y);});ctx.stroke();
+  ctx.strokeStyle="#d36a28";ctx.setLineDash([5,4]);ctx.beginPath();rows.forEach((r,i)=>{const v=fit.intercept+fit.slope*r.year;const x=xFor(i),y=yFor(v);i?ctx.lineTo(x,y):ctx.moveTo(x,y);});ctx.stroke();ctx.setLineDash([]);
+  ctx.fillStyle="#607783";ctx.fillText(String(rows[0].year),pad.l,h-8);const last=String(rows.at(-1).year);ctx.fillText(last,w-pad.r-ctx.measureText(last).width,h-8);
+}
+
+function renderTrend() {
+  if(!trendData?.length) return;
+  const key=trendVariable, fit=linearTrend(trendData,key), unit=key==="rain"?"mm/year":"°C/year", changeUnit=key==="rain"?"mm":"°C";
+  trendYears.textContent=`${trendData[0].year}–${trendData.at(-1).year}`;
+  trendSlope.textContent=`${fit.slope>=0?"+":""}${key==="rain"?fit.slope.toFixed(1):fit.slope.toFixed(3)} ${unit}`;
+  trendChange.textContent=`${fit.total>=0?"+":""}${key==="rain"?fit.total.toFixed(0):fit.total.toFixed(2)} ${changeUnit}`;
+  trendSignificance.textContent=fit.p<0.05?`Significant (p=${fit.p<0.001?"<0.001":fit.p.toFixed(3)})`:`Not significant (p=${fit.p.toFixed(3)})`;
+  const direction=Math.abs(fit.slope)<1e-10?"flat":fit.slope>0?"up":"down";
+  trendFinding.className=`trend-finding ${direction}`;
+  const variable=key==="rain"?"annual precipitation":"annual mean temperature";
+  const dir=fit.slope>0?"increasing":"decreasing";
+  trendFinding.querySelector("strong").textContent=`${dir.toUpperCase()} ${variable.toUpperCase()}`;
+  trendFinding.querySelector("p").textContent=`NASA POWER data show a ${dir} linear trend of ${Math.abs(fit.slope).toFixed(key==="rain"?1:3)} ${unit}. Over this period, the fitted change is ${Math.abs(fit.total).toFixed(key==="rain"?0:2)} ${changeUnit}. This trend is ${fit.p<0.05?"statistically significant":"not statistically significant"} at the p < 0.05 threshold.`;
+  drawTrendChart(trendData,key,fit);
+}
+
+async function analyseHistoricalTrends(lat,lon){
+  if(!trendStatus)return; const requestId=++trendRequestId; currentAnalysisLat=lat;currentAnalysisLon=lon;
+  trendStatus.textContent="Contacting NASA POWER and building the historical time series…";
+  trendFinding.className="trend-finding neutral";trendFinding.querySelector("strong").textContent="ANALYSING NASA DATA";trendFinding.querySelector("p").textContent="Aggregating monthly observations into complete annual values and calculating a linear trend.";
+  try{const raw=await fetchNasaPowerMonthly(lat,lon,Number(trendPeriod.value));if(requestId!==trendRequestId)return;trendData=monthlyToAnnual(raw);if(trendData.length<5)throw new Error("Not enough complete annual observations.");trendStatus.textContent=`NASA historical analysis complete: ${trendData.length} complete years.`;renderTrend();}
+  catch(e){console.error("NASA trend analysis error:",e);if(requestId!==trendRequestId)return;trendData=null;trendStatus.textContent="NASA historical data could not be loaded for this point.";trendYears.textContent=trendSlope.textContent=trendChange.textContent=trendSignificance.textContent="—";trendFinding.className="trend-finding neutral";trendFinding.querySelector("strong").textContent="DATA UNAVAILABLE";trendFinding.querySelector("p").textContent="Try again later or select another point. Terrain analysis and the rest of HyperFlood remain available.";}
+}
+
+trendTabs.forEach(btn=>btn.addEventListener("click",()=>{trendTabs.forEach(b=>b.classList.remove("active"));btn.classList.add("active");trendVariable=btn.dataset.variable;renderTrend();}));
+trendPeriod?.addEventListener("change",()=>{if(currentAnalysisLat!==null)analyseHistoricalTrends(currentAnalysisLat,currentAnalysisLon);});
+window.addEventListener("resize",()=>{if(trendData)renderTrend();});
+
+// Add the v6 historical investigation to every search, map click and marker drag.
+const v6UpdateAnalysisPoint = updateAnalysisPoint;
+updateAnalysisPoint = function(lat,lon,label){v6UpdateAnalysisPoint(lat,lon,label);analyseHistoricalTrends(lat,lon);};
