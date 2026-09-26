@@ -27,8 +27,8 @@
         </form>
 
         <div class="prototype-note">
-          <strong>Prototype v5</strong>
-          <span>Global map + Elevation & Terrain Intelligence</span>
+          <strong>Prototype v6</strong>
+          <span>Global map + Terrain Intelligence + NASA Historical Trend Detective</span>
         </div>
       </div>
     </section>
@@ -81,16 +81,50 @@
             <p class="data-note">Current live elevation service: Copernicus DEM GLO-90 via Open-Meteo. Nine points are sampled across an approximately 1 km × 1 km zone.</p>
           </div>
 
+          <div class="panel-section trend-section">
+            <div class="trend-heading">
+              <div>
+                <p class="panel-label">NASA EARTH SYSTEM TREND DETECTIVE</p>
+                <h3>Historical analysis</h3>
+              </div>
+              <select id="trendPeriod" aria-label="Historical analysis period">
+                <option value="10">10 years</option>
+                <option value="20">20 years</option>
+                <option value="25" selected>25 years</option>
+              </select>
+            </div>
+            <p id="trendStatus" class="terrain-status">Select a point to investigate historical NASA precipitation and temperature trends.</p>
+            <div class="trend-tabs" role="group" aria-label="Historical variable">
+              <button class="trend-tab active" type="button" data-variable="rain">Precipitation</button>
+              <button class="trend-tab" type="button" data-variable="temp">Temperature</button>
+            </div>
+            <div class="trend-chart-wrap">
+              <canvas id="trendChart" width="640" height="260" aria-label="Historical trend chart"></canvas>
+            </div>
+            <div class="trend-grid">
+              <div class="terrain-metric"><span>Period</span><strong id="trendYears">—</strong></div>
+              <div class="terrain-metric"><span>Trend</span><strong id="trendSlope">—</strong></div>
+              <div class="terrain-metric"><span>Total change</span><strong id="trendChange">—</strong></div>
+              <div class="terrain-metric"><span>Significance</span><strong id="trendSignificance">—</strong></div>
+            </div>
+            <div id="trendFinding" class="trend-finding neutral">
+              <strong>WAITING FOR LOCATION</strong>
+              <p>HyperFlood will answer: what is changing, where, how much, and whether the detected linear trend is statistically significant.</p>
+            </div>
+            <p class="data-note">Historical source: NASA POWER. Precipitation is derived from GPM IMERG; temperature is derived from MERRA-2. Trend significance uses a two-sided linear-regression test (p &lt; 0.05).</p>
+          </div>
+
           <div class="panel-section">
             <p class="panel-label">ANALYSIS ROADMAP</p>
             <ul class="layer-list">
               <li class="layer-active"><span>01</span> Elevation &amp; terrain ✓</li>
-              <li><span>02</span> Soil infiltration / runoff potential</li>
-              <li><span>03</span> Rivers &amp; drainage</li>
-              <li><span>04</span> Recent precipitation</li>
-              <li><span>05</span> 24h / 48h / 7-day precipitation forecast</li>
-              <li><span>06</span> Surface water indicators</li>
-              <li><span>07</span> Explainable flood-risk assessment</li>
+              <li class="layer-active"><span>02</span> NASA historical trends ✓</li>
+              <li><span>03</span> Soil infiltration / runoff potential</li>
+              <li><span>04</span> Rivers &amp; drainage</li>
+              <li><span>05</span> Recent precipitation</li>
+              <li><span>06</span> 24h / 48h / 7-day precipitation forecast</li>
+              <li><span>07</span> Surface water indicators</li>
+              <li><span>08</span> Explainable flood-risk assessment</li>
             </ul>
           </div>
 
