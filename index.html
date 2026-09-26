@@ -64,18 +64,9 @@
           <div class="panel-section roadmap-section">
             <p class="panel-label">ANALYSIS ROADMAP</p>
             <ul class="layer-list analysis-roadmap" aria-label="HyperFlood analysis roadmap">
-              <li id="roadmapTerrain" class="roadmap-item pending"><span class="roadmap-number">01</span><span class="roadmap-name">Elevation &amp; terrain</span><span class="roadmap-state" aria-label="Waiting"></span></li>
-              <li id="roadmapTrends" class="roadmap-item pending"><span class="roadmap-number">02</span><span class="roadmap-name">NASA historical trends + proxy</span><span class="roadmap-state" aria-label="Waiting"></span></li>
-              <li id="roadmapSoil" class="roadmap-item pending"><span class="roadmap-number">03</span><span class="roadmap-name">Soil wetness + runoff potential</span><span class="roadmap-state" aria-label="Waiting"></span></li>
-              <li class="roadmap-item future"><span class="roadmap-number">04</span><span class="roadmap-name">Rivers &amp; drainage</span><span class="roadmap-state" aria-label="Planned"></span></li>
-              <li class="roadmap-item future"><span class="roadmap-number">05</span><span class="roadmap-name">Recent precipitation</span><span class="roadmap-state" aria-label="Planned"></span></li>
-              <li class="roadmap-item future"><span class="roadmap-number">06</span><span class="roadmap-name">24h / 48h / 7-day precipitation forecast</span><span class="roadmap-state" aria-label="Planned"></span></li>
-              <li class="roadmap-item future"><span class="roadmap-number">07</span><span class="roadmap-name">Surface water indicators</span><span class="roadmap-state" aria-label="Planned"></span></li>
-              <li class="roadmap-item future"><span class="roadmap-number">08</span><span class="roadmap-name">Explainable flood-risk assessment</span><span class="roadmap-state" aria-label="Planned"></span></li>
-            </ul>
-          </div>
-
-          <div class="panel-section terrain-section">
+              <li id="roadmapTerrain" class="roadmap-item pending roadmap-accordion-item" data-detail="detailTerrain">
+                <button class="roadmap-toggle" type="button" aria-expanded="false" aria-controls="detailTerrain"><span class="roadmap-number">01</span><span class="roadmap-name">Elevation &amp; terrain</span><span class="roadmap-state" aria-label="Waiting"></span></button>
+                <div id="detailTerrain" class="roadmap-detail terrain-section">
             <p class="panel-label">ELEVATION &amp; TERRAIN INTELLIGENCE</p>
             <p id="terrainStatus" class="terrain-status">Select a point to analyse the surrounding terrain.</p>
             <div class="terrain-grid">
@@ -95,7 +86,10 @@
             <p class="data-note">Current live elevation service: Copernicus DEM GLO-90 via Open-Meteo. Nine points are sampled across an approximately 1 km × 1 km zone.</p>
           </div>
 
-          <div class="panel-section trend-section">
+              </li>
+              <li id="roadmapTrends" class="roadmap-item pending roadmap-accordion-item" data-detail="detailTrends">
+                <button class="roadmap-toggle" type="button" aria-expanded="false" aria-controls="detailTrends"><span class="roadmap-number">02</span><span class="roadmap-name">NASA historical trends + proxy</span><span class="roadmap-state" aria-label="Waiting"></span></button>
+                <div id="detailTrends" class="roadmap-detail trend-section">
             <div class="trend-heading">
               <div>
                 <p class="panel-label">NASA EARTH SYSTEM TREND DETECTIVE</p>
@@ -129,7 +123,10 @@
           </div>
 
 
-          <div class="panel-section soil-section">
+              </li>
+              <li id="roadmapSoil" class="roadmap-item pending roadmap-accordion-item" data-detail="detailSoil">
+                <button class="roadmap-toggle" type="button" aria-expanded="false" aria-controls="detailSoil"><span class="roadmap-number">03</span><span class="roadmap-name">Soil wetness + runoff potential</span><span class="roadmap-state" aria-label="Waiting"></span></button>
+                <div id="detailSoil" class="roadmap-detail soil-section">
             <div class="soil-heading">
               <div>
                 <p class="panel-label">SOIL &amp; RUNOFF INTELLIGENCE</p>
@@ -149,6 +146,15 @@
               <p>HyperFlood will combine soil wetness with terrain position and slope to estimate runoff pressure.</p>
             </div>
             <p id="soilSourceNote" class="data-note">NASA POWER soil wetness uses MERRA-2-based surface and root-zone wetness. This is a derived prototype index, not a measured infiltration rate or flood probability.</p>
+          </div>
+
+              </li>
+              <li class="roadmap-item future roadmap-accordion-item" data-detail="detailRivers"><button class="roadmap-toggle" type="button" aria-expanded="false" aria-controls="detailRivers"><span class="roadmap-number">04</span><span class="roadmap-name">Rivers &amp; drainage</span><span class="roadmap-state" aria-label="Planned"></span></button><div id="detailRivers" class="roadmap-detail future-detail"><strong>Rivers &amp; drainage</strong><p>Planned next layer: nearby rivers, streams, drainage paths and the selected point’s relationship to them.</p></div></li>
+              <li class="roadmap-item future roadmap-accordion-item" data-detail="detailRecentRain"><button class="roadmap-toggle" type="button" aria-expanded="false" aria-controls="detailRecentRain"><span class="roadmap-number">05</span><span class="roadmap-name">Recent precipitation</span><span class="roadmap-state" aria-label="Planned"></span></button><div id="detailRecentRain" class="roadmap-detail future-detail"><strong>Recent precipitation</strong><p>Planned layer: recent rainfall totals and intensity around the selected location.</p></div></li>
+              <li class="roadmap-item future roadmap-accordion-item" data-detail="detailForecast"><button class="roadmap-toggle" type="button" aria-expanded="false" aria-controls="detailForecast"><span class="roadmap-number">06</span><span class="roadmap-name">24h / 48h / 7-day precipitation forecast</span><span class="roadmap-state" aria-label="Planned"></span></button><div id="detailForecast" class="roadmap-detail future-detail"><strong>Precipitation forecast</strong><p>Planned layer: rainfall outlooks for the 24-hour, 48-hour and 7-day warning windows.</p></div></li>
+              <li class="roadmap-item future roadmap-accordion-item" data-detail="detailSurface"><button class="roadmap-toggle" type="button" aria-expanded="false" aria-controls="detailSurface"><span class="roadmap-number">07</span><span class="roadmap-name">Surface water indicators</span><span class="roadmap-state" aria-label="Planned"></span></button><div id="detailSurface" class="roadmap-detail future-detail"><strong>Surface water indicators</strong><p>Planned layer: surface-water conditions that can strengthen or reduce the flood-pressure signal.</p></div></li>
+              <li class="roadmap-item future roadmap-accordion-item" data-detail="detailRisk"><button class="roadmap-toggle" type="button" aria-expanded="false" aria-controls="detailRisk"><span class="roadmap-number">08</span><span class="roadmap-name">Explainable flood-risk assessment</span><span class="roadmap-state" aria-label="Planned"></span></button><div id="detailRisk" class="roadmap-detail future-detail"><strong>Explainable flood-risk assessment</strong><p>Final planned layer: combine terrain, soil, drainage, rainfall, surface water and forecast evidence into an explainable early-warning outlook.</p></div></li>
+            </ul>
           </div>
 
           <div class="warning-card prototype-warning">

@@ -838,3 +838,33 @@ updateAnalysisPoint = function(lat, lon, label) {
   v9UpdateAnalysisPoint(lat, lon, label);
   analyseSoilRunoff(lat, lon);
 };
+
+// V9 compact Analysis Roadmap accordion.
+// Only one layer can be expanded at a time; analysis/loading continues in the background.
+(function setupRoadmapAccordion() {
+  const items = Array.from(document.querySelectorAll('.roadmap-accordion-item'));
+  if (!items.length) return;
+
+  function closeItem(item) {
+    item.classList.remove('open');
+    const button = item.querySelector(':scope > .roadmap-toggle');
+    if (button) button.setAttribute('aria-expanded', 'false');
+  }
+
+  function openItem(item) {
+    items.forEach(other => { if (other !== item) closeItem(other); });
+    item.classList.add('open');
+    const button = item.querySelector(':scope > .roadmap-toggle');
+    if (button) button.setAttribute('aria-expanded', 'true');
+  }
+
+  items.forEach(item => {
+    const button = item.querySelector(':scope > .roadmap-toggle');
+    if (!button) return;
+    button.addEventListener('click', () => {
+      const wasOpen = item.classList.contains('open');
+      items.forEach(closeItem);
+      if (!wasOpen) openItem(item);
+    });
+  });
+})();
