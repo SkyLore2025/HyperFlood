@@ -526,43 +526,78 @@ let currentAnalysisLat = null;
 let currentAnalysisLon = null;
 
 async function fetchNasaPowerMonthly(lat, lon, yearsBack) {
-  const endYear = new Date().getUTCFullYear() - 1; // use complete calendar years only
-  const startYear = endYear - yearsBack + 1;
-  const url = new URL("https://power.larc.nasa.gov/api/temporal/monthly/point");
-  url.searchParams.set("parameters", "PRECTOTCORR,T2M");
-  url.searchParams.set("community", "AG");
-  url.searchParams.set("longitude", Number(lon).toFixed(5));
+  // v7 uses the Vercel serverless proxy at /api/power instead of calling
+  // NASA POWER directly from the browser. This avoids the browser-side
+  // cross-origin problem that caused the v6 DATA UNAVAILABLE message.
+  const url = new URL("/api/power", window.location.origin);
   url.searchParams.set("latitude", Number(lat).toFixed(5));
-  url.searchParams.set("start", String(startYear));
-  url.searchParams.set("end", String(endYear));
-  url.searchParams.set("format", "JSON");
-  const response = await fetch(url);
-  if (!response.ok) throw new Error(`NASA POWER request failed (${response.status})`);
-  const json = await response.json();
-  const params = json?.properties?.parameter;
-  if (!params?.PRECTOTCORR || !params?.T2M) throw new Error("NASA POWER returned incomplete parameters.");
-  return { startYear, endYear, params };
+  url.searchParams.set("longitude", Number(lon).toFixed(5));
+  url.searchParams.set("years", String(yearsBack));
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 30000);
+
+  try {
+    const response = await fetch(url.toString(), {
+      method: "GET",
+      headers: { "Accept": "application/json" },
+      cache: "no-store",
+      signal: controller.signal
+    });
+
+    const text = await response.text();
+    let json = null;
+    try { json = JSON.parse(text); } catch (_) {}
+
+    if (!response.ok || !json?.ok) {
+      const message = json?.error || json?.detail || text.slice(0, 250);
+      throw new Error(`Historical data request failed (${response.status})${message ? `: ${message}` : ""}`);
+    }
+
+    return {
+      startYear: json.startYear,
+      endYear: json.endYear,
+      params: {
+        T2M: json.parameters?.T2M || {},
+        PRECTOTCORR: json.parameters?.precipitation || {}
+      },
+      rainParameter: json.precipitationParameter || "PRECTOTCORR"
+    };
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 function monthlyToAnnual(power) {
   const rainByYear = {}, tempByYear = {};
-  for (const [key, value] of Object.entries(power.params.PRECTOTCORR)) {
-    if (!/^\d{6}$/.test(key) || Number(value) < -900) continue;
-    const y = key.slice(0,4); (rainByYear[y] ||= []).push(Number(value));
+
+  for (const [key, value] of Object.entries(power.params.PRECTOTCORR || {})) {
+    if (!/^\d{6}$/.test(key) || !Number.isFinite(Number(value)) || Number(value) < -900) continue;
+    const y = key.slice(0, 4);
+    (rainByYear[y] ||= []).push(Number(value));
   }
-  for (const [key, value] of Object.entries(power.params.T2M)) {
-    if (!/^\d{6}$/.test(key) || Number(value) < -900) continue;
-    const y = key.slice(0,4); (tempByYear[y] ||= []).push(Number(value));
+
+  for (const [key, value] of Object.entries(power.params.T2M || {})) {
+    if (!/^\d{6}$/.test(key) || !Number.isFinite(Number(value)) || Number(value) < -900) continue;
+    const y = key.slice(0, 4);
+    (tempByYear[y] ||= []).push(Number(value));
   }
+
   const years = [];
-  for (let y=power.startYear; y<=power.endYear; y++) {
-    const k=String(y), r=rainByYear[k], t=tempByYear[k];
-    if (r?.length===12 && t?.length===12) {
-      // POWER monthly PRECTOTCORR is mm/day. Convert each monthly mean rate
-      // to approximate annual total using calendar days in that month.
-      const annualRain = r.reduce((sum, rate, i) => sum + rate * new Date(y, i+1, 0).getDate(), 0);
-      const annualTemp = t.reduce((a,b)=>a+b,0)/12;
-      years.push({year:y, rain:annualRain, temp:annualTemp});
+  for (let y = power.startYear; y <= power.endYear; y++) {
+    const k = String(y);
+    const r = rainByYear[k];
+    const t = tempByYear[k];
+
+    if (r?.length === 12 && t?.length === 12) {
+      // NASA POWER monthly precipitation is expressed as a mean daily rate.
+      // Convert each month's rate to an approximate monthly accumulation.
+      const annualRain = r.reduce(
+        (sum, rate, i) => sum + rate * new Date(y, i + 1, 0).getDate(),
+        0
+      );
+      const annualTemp = t.reduce((a, b) => a + b, 0) / 12;
+      years.push({ year: y, rain: annualRain, temp: annualTemp });
     }
   }
   return years;
@@ -619,7 +654,7 @@ async function analyseHistoricalTrends(lat,lon){
   trendStatus.textContent="Contacting NASA POWER and building the historical time series…";
   trendFinding.className="trend-finding neutral";trendFinding.querySelector("strong").textContent="ANALYSING NASA DATA";trendFinding.querySelector("p").textContent="Aggregating monthly observations into complete annual values and calculating a linear trend.";
   try{const raw=await fetchNasaPowerMonthly(lat,lon,Number(trendPeriod.value));if(requestId!==trendRequestId)return;trendData=monthlyToAnnual(raw);if(trendData.length<5)throw new Error("Not enough complete annual observations.");trendStatus.textContent=`NASA historical analysis complete: ${trendData.length} complete years.`;renderTrend();}
-  catch(e){console.error("NASA trend analysis error:",e);if(requestId!==trendRequestId)return;trendData=null;trendStatus.textContent="NASA historical data could not be loaded for this point.";trendYears.textContent=trendSlope.textContent=trendChange.textContent=trendSignificance.textContent="—";trendFinding.className="trend-finding neutral";trendFinding.querySelector("strong").textContent="DATA UNAVAILABLE";trendFinding.querySelector("p").textContent="Try again later or select another point. Terrain analysis and the rest of HyperFlood remain available.";}
+  catch(e){console.error("NASA trend analysis error:",e);if(requestId!==trendRequestId)return;trendData=null;trendStatus.textContent="NASA historical data could not be loaded for this point.";trendYears.textContent=trendSlope.textContent=trendChange.textContent=trendSignificance.textContent="—";trendFinding.className="trend-finding neutral";trendFinding.querySelector("strong").textContent="DATA UNAVAILABLE";trendFinding.querySelector("p").textContent="The NASA proxy could not return usable historical data. Terrain analysis and the rest of HyperFlood remain available.";}
 }
 
 trendTabs.forEach(btn=>btn.addEventListener("click",()=>{trendTabs.forEach(b=>b.classList.remove("active"));btn.classList.add("active");trendVariable=btn.dataset.variable;renderTrend();}));
