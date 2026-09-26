@@ -302,3 +302,23 @@ body { overflow: hidden; }
 @media (max-width:620px) {
   .warning-controls { width:100%; justify-content:space-between; }
 }
+
+/* =========================================================
+   v6 — NASA EARTH SYSTEM TREND DETECTIVE
+   ========================================================= */
+.trend-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
+.trend-heading h3 { margin-top:3px; }
+#trendPeriod { border:1px solid var(--line); border-radius:8px; padding:6px 8px; background:#fff; font:inherit; font-size:12px; }
+.trend-tabs { display:flex; gap:6px; margin:12px 0 10px; }
+.trend-tab { border:1px solid #cbd9e2; background:#f6fafc; color:#29424f; border-radius:999px; padding:6px 10px; font-size:11px; font-weight:800; cursor:pointer; }
+.trend-tab.active { background:#163f58; border-color:#163f58; color:#fff; }
+.trend-chart-wrap { border:1px solid #dce7ed; border-radius:12px; background:#fbfdfe; padding:8px; overflow:hidden; }
+#trendChart { display:block; width:100%; height:180px; }
+.trend-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:10px; }
+.trend-finding { margin-top:10px; border-radius:10px; padding:11px 12px; border:1px solid #d5e1e7; background:#f5f8fa; }
+.trend-finding strong { font-size:12px; letter-spacing:.04em; }
+.trend-finding p { margin:5px 0 0; font-size:12px; line-height:1.45; }
+.trend-finding.up { background:#eef7ff; border-color:#bddcf4; }
+.trend-finding.down { background:#eef9f2; border-color:#bee2ca; }
+.trend-finding.flat { background:#f7f7f4; border-color:#deded4; }
+@media (max-width:700px){ .trend-grid{grid-template-columns:1fr 1fr;} #trendChart{height:160px;} }
