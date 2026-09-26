@@ -3,6 +3,7 @@
 
 const NASA_POWER_URL = "https://power.larc.nasa.gov/api/temporal/monthly/point";
 const ALLOWED_YEARS = new Set([10, 20, 25]);
+const SOIL_MONTHS = 36;
 
 function json(res, status, body) {
   res.status(status).setHeader("Content-Type", "application/json; charset=utf-8");
@@ -43,6 +44,62 @@ async function requestPower(parameters, lat, lon, startYear, endYear) {
   return data;
 }
 
+async function requestSoil(lat, lon) {
+  const endYear = new Date().getUTCFullYear() - 1;
+  const startYear = endYear - 2;
+  const url = new URL(NASA_POWER_URL);
+  url.searchParams.set("parameters", "GWETTOP,GWETROOT,PRECTOTCORR");
+  url.searchParams.set("community", "AG");
+  url.searchParams.set("longitude", Number(lon).toFixed(5));
+  url.searchParams.set("latitude", Number(lat).toFixed(5));
+  url.searchParams.set("start", String(startYear));
+  url.searchParams.set("end", String(endYear));
+  url.searchParams.set("format", "JSON");
+
+  const response = await fetch(url.toString(), { headers: { Accept: "application/json" } });
+  const text = await response.text();
+  let data = null;
+  try { data = JSON.parse(text); } catch (_) {}
+  if (!response.ok) {
+    const message = data?.messages?.join?.(" ") || data?.message || text.slice(0, 300);
+    throw new Error(`NASA POWER ${response.status}: ${message}`);
+  }
+
+  const parameters = data?.properties?.parameter || data?.parameter;
+  if (!parameters?.GWETTOP || !parameters?.GWETROOT || !parameters?.PRECTOTCORR) {
+    throw new Error("NASA POWER did not return the soil wetness variables required by HyperFlood.");
+  }
+
+  const keys = Object.keys(parameters.GWETTOP)
+    .filter(k => /^\d{6}$/.test(k) && k.slice(4) !== "13")
+    .sort();
+  if (!keys.length) throw new Error("NASA POWER returned no complete soil-wetness months.");
+
+  const latestKey = keys[keys.length - 1];
+  const wetTop = Number(parameters.GWETTOP[latestKey]);
+  const wetRoot = Number(parameters.GWETROOT[latestKey]);
+  const rainRate = Number(parameters.PRECTOTCORR[latestKey]);
+
+  if (![wetTop, wetRoot, rainRate].every(Number.isFinite)) {
+    throw new Error("NASA POWER returned invalid soil-wetness values.");
+  }
+
+  const year = Number(latestKey.slice(0,4));
+  const month = Number(latestKey.slice(4,6));
+  const days = new Date(Date.UTC(year, month, 0)).getUTCDate();
+
+  return {
+    ok: true,
+    source: "NASA POWER",
+    dataset: "MERRA-2 surface/root-zone soil wetness + precipitation",
+    period: `${year}-${String(month).padStart(2,'0')}`,
+    surfaceWetness: Math.max(0, Math.min(1, wetTop)),
+    rootZoneWetness: Math.max(0, Math.min(1, wetRoot)),
+    precipitationRate: rainRate,
+    precipitationApproxMm: rainRate * days
+  };
+}
+
 export default async function handler(req, res) {
   if (req.method === "OPTIONS") {
     return json(res, 204, {});
@@ -50,6 +107,27 @@ export default async function handler(req, res) {
 
   if (req.method !== "GET") {
     return json(res, 405, { error: "Method not allowed. Use GET." });
+  }
+
+  if (req.query?.mode === "soil") {
+    const lat = Number(req.query?.lat);
+    const lon = Number(req.query?.lon);
+    if (!Number.isFinite(lat) || lat < -90 || lat > 90) {
+      return json(res, 400, { error: "Latitude must be a number between -90 and 90." });
+    }
+    if (!Number.isFinite(lon) || lon < -180 || lon > 180) {
+      return json(res, 400, { error: "Longitude must be a number between -180 and 180." });
+    }
+    try {
+      return json(res, 200, await requestSoil(lat, lon));
+    } catch (error) {
+      console.error("HyperFlood NASA soil proxy error:", error);
+      return json(res, 502, {
+        ok: false,
+        error: "NASA POWER soil wetness data could not be loaded.",
+        detail: error.message
+      });
+    }
   }
 
   const lat = Number(req.query?.lat);
