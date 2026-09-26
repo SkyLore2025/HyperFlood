@@ -530,8 +530,8 @@ async function fetchNasaPowerMonthly(lat, lon, yearsBack) {
   // NASA POWER directly from the browser. This avoids the browser-side
   // cross-origin problem that caused the v6 DATA UNAVAILABLE message.
   const url = new URL("/api/power", window.location.origin);
-  url.searchParams.set("latitude", Number(lat).toFixed(5));
-  url.searchParams.set("longitude", Number(lon).toFixed(5));
+  url.searchParams.set("lat", Number(lat).toFixed(5));
+  url.searchParams.set("lon", Number(lon).toFixed(5));
   url.searchParams.set("years", String(yearsBack));
 
   const controller = new AbortController();
@@ -572,13 +572,13 @@ function monthlyToAnnual(power) {
   const rainByYear = {}, tempByYear = {};
 
   for (const [key, value] of Object.entries(power.params.PRECTOTCORR || {})) {
-    if (!/^\d{6}$/.test(key) || !Number.isFinite(Number(value)) || Number(value) < -900) continue;
+    if (!/^\d{6}$/.test(key) || key.slice(4) === "13" || !Number.isFinite(Number(value)) || Number(value) < -900) continue;
     const y = key.slice(0, 4);
     (rainByYear[y] ||= []).push(Number(value));
   }
 
   for (const [key, value] of Object.entries(power.params.T2M || {})) {
-    if (!/^\d{6}$/.test(key) || !Number.isFinite(Number(value)) || Number(value) < -900) continue;
+    if (!/^\d{6}$/.test(key) || key.slice(4) === "13" || !Number.isFinite(Number(value)) || Number(value) < -900) continue;
     const y = key.slice(0, 4);
     (tempByYear[y] ||= []).push(Number(value));
   }

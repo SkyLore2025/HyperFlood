@@ -1,8 +1,8 @@
-# HyperFlood v7
+# HyperFlood v8
 
 HyperFlood is a prototype for global, hyperlocal flood intelligence using a selected map point, terrain analysis and NASA Earth-system historical trends.
 
-## What changed in v7
+## What changed in v8
 
 Version 7 moves the NASA POWER historical-data request to a Vercel serverless function:
 
@@ -29,7 +29,7 @@ This project should be deployed on Vercel rather than GitHub Pages if you want t
 5. Open the Vercel project URL.
 6. Search for a place and check the NASA Earth System Trend Detective section.
 
-GitHub Pages can still host the static files, but it cannot execute `api/power.js`; the v7 historical analysis therefore expects the Vercel deployment URL.
+GitHub Pages can still host the static files, but it cannot execute `api/power.js`; the v8 historical analysis therefore expects the Vercel deployment URL.
 
 ## NASA POWER request
 
@@ -40,3 +40,9 @@ The frontend aggregates complete monthly observations into annual precipitation 
 ## Scientific note
 
 The historical trend layer is a climate/meteorological trend investigation, not a street-level flood forecast. NASA POWER data should not be presented as street-level rainfall measurements. HyperFlood's hyperlocal component comes from the selected analysis point and the combination of multiple environmental layers planned for later versions.
+
+
+## V8 fixes
+- Browser now calls `/api/power` with `lat` and `lon`, matching the Vercel proxy.
+- NASA POWER annual aggregate key ending in `13` is excluded from monthly trend calculations.
+- Vercel Node.js runtime is pinned to 24.x.
