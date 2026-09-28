@@ -1,209 +1,208 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>HyperFlood V10 | Hyperlocal Flood Intelligence</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <link rel="stylesheet" href="style.css" />
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>HyperFlood V10 | Hyperlocal Flood Intelligence</title>
+<link href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" rel="stylesheet"/>
+<link href="style.css" rel="stylesheet"/>
 </head>
 <body>
-  <main class="app-shell">
-    <section id="searchScreen" class="screen search-screen">
-      <div class="hero">
-        <div class="brand-mark">🌧️</div>
-        <p class="eyebrow">GLOBAL FLOOD INTELLIGENCE</p>
-        <h1>HyperFlood</h1>
-        <p class="tagline">Explore flood risk at the places that matter to you.</p>
+<main class="app-shell">
+<section class="screen search-screen" id="searchScreen">
+<div class="hero">
+<div class="brand-mark">🌧️</div>
+<p class="eyebrow">GLOBAL FLOOD INTELLIGENCE</p>
+<h1>HyperFlood</h1>
+<p class="tagline">Explore flood risk at the places that matter to you.</p>
+<form class="search-card" id="locationForm">
+<label for="locationInput">Search for a city, town, village or neighbourhood</label>
+<div class="search-row">
+<input autocomplete="off" id="locationInput" placeholder="Try: Coimbatore, India" required="" type="search"/>
+<button id="searchButton" type="submit">Search</button>
+</div>
+<p aria-live="polite" class="status" id="status">Enter a location to begin.</p>
+<div aria-live="polite" class="results" id="results"></div>
+</form>
+<div class="prototype-note">
+<strong>Prototype v10</strong>
+<span>Global map + Terrain + NASA Trends + Soil/Runoff + Rivers &amp; Drainage Intelligence</span>
+</div>
+</div>
+</section>
+<section class="screen map-screen hidden" id="mapScreen">
+<header class="topbar">
+<div>
+<p class="eyebrow">HYPERLOCAL FLOOD INTELLIGENCE</p>
+<h2 id="selectedPlaceName">Selected location</h2>
+</div>
+<div class="map-search-wrap">
+<form class="map-search-form" id="mapLocationForm">
+<input aria-label="Search a new location" autocomplete="off" id="mapLocationInput" placeholder="Search a new location…" required="" type="search"/>
+<button id="mapSearchButton" type="submit">Search</button>
+</form>
+<div aria-live="polite" class="map-search-results hidden" id="mapSearchResults"></div>
+</div>
+<button class="secondary-button" id="backButton" type="button">← Home</button>
+</header>
+<div class="map-layout">
+<section aria-label="Interactive flood intelligence map" class="map-pane">
+<div class="map" id="map"></div>
+</section>
+<aside class="info-panel">
+<div class="panel-section">
+<p class="panel-label">SELECTED LOCATION</p>
+<h3 id="selectedPlaceLabel">—</h3>
+<p class="coordinates" id="coordinates">—</p>
+</div>
+<div class="panel-section roadmap-section">
+<p class="panel-label">ANALYSIS ROADMAP</p>
+<ul aria-label="HyperFlood analysis roadmap" class="layer-list analysis-roadmap">
+<li class="roadmap-item pending roadmap-accordion-item" data-detail="detailTrends" id="roadmapTrends">
+<button aria-controls="detailTrends" aria-expanded="false" class="roadmap-toggle" type="button"><span class="roadmap-number">01</span><span class="roadmap-name">NASA historical trends + proxy</span><span aria-label="Waiting" class="roadmap-state"></span></button>
+<div class="roadmap-detail trend-section" id="detailTrends">
+<div class="trend-heading">
+<div>
+<p class="panel-label">NASA EARTH SYSTEM TREND DETECTIVE</p>
+<h3>Historical analysis</h3>
+</div>
+<select aria-label="Historical analysis period" id="trendPeriod">
+<option value="10">10 years</option>
+<option value="20">20 years</option>
+<option selected="" value="25">25 years</option>
+</select>
+</div>
+<p class="terrain-status" id="trendStatus">Select a point to investigate historical NASA precipitation and temperature trends.</p>
+<div aria-label="Historical variable" class="trend-tabs" role="group">
+<button class="trend-tab active" data-variable="rain" type="button">Precipitation</button>
+<button class="trend-tab" data-variable="temp" type="button">Temperature</button>
+</div>
+<div class="trend-chart-wrap">
+<canvas aria-label="Historical trend chart" height="260" id="trendChart" width="640"></canvas>
+</div>
+<div class="trend-grid">
+<div class="terrain-metric"><span>Period</span><strong id="trendYears">—</strong></div>
+<div class="terrain-metric"><span>Trend</span><strong id="trendSlope">—</strong></div>
+<div class="terrain-metric"><span>Total change</span><strong id="trendChange">—</strong></div>
+<div class="terrain-metric"><span>Significance</span><strong id="trendSignificance">—</strong></div>
+</div>
+<div class="trend-finding neutral" id="trendFinding">
+<strong>WAITING FOR LOCATION</strong>
+<p>HyperFlood will answer: what is changing, where, how much, and whether the detected linear trend is statistically significant.</p>
+</div>
+<p class="data-note">Historical source: NASA POWER. Precipitation is derived from GPM IMERG; temperature is derived from MERRA-2. Trend significance uses a two-sided linear-regression test (p &lt; 0.05).</p>
+</div>
+</li><li class="roadmap-item pending roadmap-accordion-item" data-detail="detailTerrain" id="roadmapTerrain">
+<button aria-controls="detailTerrain" aria-expanded="false" class="roadmap-toggle" type="button"><span class="roadmap-number">02</span><span class="roadmap-name">Elevation &amp; terrain</span><span aria-label="Waiting" class="roadmap-state"></span></button>
+<div class="roadmap-detail terrain-section" id="detailTerrain">
+<p class="panel-label">ELEVATION &amp; TERRAIN INTELLIGENCE</p>
+<p class="terrain-status" id="terrainStatus">Select a point to analyse the surrounding terrain.</p>
+<div class="terrain-grid">
+<div class="terrain-metric"><span>Elevation</span><strong id="elevationValue">—</strong></div>
+<div class="terrain-metric"><span>Local range</span><strong id="elevationRange">—</strong></div>
+<div class="terrain-metric"><span>Relative elevation</span><strong id="relativeElevation">—</strong></div>
+<div class="terrain-metric"><span>Max local slope</span><strong id="slopeValue">—</strong></div>
+</div>
+<div class="terrain-summary">
+<div><span>Terrain</span><strong id="terrainClass">—</strong></div>
+<div><span>Local position</span><strong id="positionClass">—</strong></div>
+</div>
+<div class="terrain-factor neutral" id="terrainFactor">
+<span>TERRAIN FLOOD FACTOR</span><strong>WAITING</strong>
+<p id="terrainReason">Terrain is one component of flood susceptibility; rainfall, drainage, soil and waterways are not yet included.</p>
+</div>
+<p class="data-note">Current live elevation service: Copernicus DEM GLO-90 via Open-Meteo. Nine points are sampled across an approximately 1 km × 1 km zone.</p>
+</div>
+</li>
 
-        <form id="locationForm" class="search-card">
-          <label for="locationInput">Search for a city, town, village or neighbourhood</label>
-          <div class="search-row">
-            <input id="locationInput" type="search" placeholder="Try: Coimbatore, India" autocomplete="off" required />
-            <button id="searchButton" type="submit">Search</button>
-          </div>
-          <p id="status" class="status" aria-live="polite">Enter a location to begin.</p>
-          <div id="results" class="results" aria-live="polite"></div>
-        </form>
-
-        <div class="prototype-note">
-          <strong>Prototype v10</strong>
-          <span>Global map + Terrain + NASA Trends + Soil/Runoff + Rivers & Drainage Intelligence</span>
-        </div>
-      </div>
-    </section>
-
-    <section id="mapScreen" class="screen map-screen hidden">
-      <header class="topbar">
-        <div>
-          <p class="eyebrow">HYPERLOCAL FLOOD INTELLIGENCE</p>
-          <h2 id="selectedPlaceName">Selected location</h2>
-        </div>
-        <div class="map-search-wrap">
-          <form id="mapLocationForm" class="map-search-form">
-            <input id="mapLocationInput" type="search" placeholder="Search a new location…" autocomplete="off" aria-label="Search a new location" required />
-            <button id="mapSearchButton" type="submit">Search</button>
-          </form>
-          <div id="mapSearchResults" class="map-search-results hidden" aria-live="polite"></div>
-        </div>
-        <button id="backButton" class="secondary-button" type="button">← Home</button>
-      </header>
-
-      <div class="map-layout">
-        <section class="map-pane" aria-label="Interactive flood intelligence map">
-          <div id="map" class="map"></div>
-        </section>
-
-        <aside class="info-panel">
-          <div class="panel-section">
-            <p class="panel-label">SELECTED LOCATION</p>
-            <h3 id="selectedPlaceLabel">—</h3>
-            <p id="coordinates" class="coordinates">—</p>
-          </div>
-
-          <div class="panel-section roadmap-section">
-            <p class="panel-label">ANALYSIS ROADMAP</p>
-            <ul class="layer-list analysis-roadmap" aria-label="HyperFlood analysis roadmap">
-              <li id="roadmapTerrain" class="roadmap-item pending roadmap-accordion-item" data-detail="detailTerrain">
-                <button class="roadmap-toggle" type="button" aria-expanded="false" aria-controls="detailTerrain"><span class="roadmap-number">01</span><span class="roadmap-name">Elevation &amp; terrain</span><span class="roadmap-state" aria-label="Waiting"></span></button>
-                <div id="detailTerrain" class="roadmap-detail terrain-section">
-            <p class="panel-label">ELEVATION &amp; TERRAIN INTELLIGENCE</p>
-            <p id="terrainStatus" class="terrain-status">Select a point to analyse the surrounding terrain.</p>
-            <div class="terrain-grid">
-              <div class="terrain-metric"><span>Elevation</span><strong id="elevationValue">—</strong></div>
-              <div class="terrain-metric"><span>Local range</span><strong id="elevationRange">—</strong></div>
-              <div class="terrain-metric"><span>Relative elevation</span><strong id="relativeElevation">—</strong></div>
-              <div class="terrain-metric"><span>Max local slope</span><strong id="slopeValue">—</strong></div>
-            </div>
-            <div class="terrain-summary">
-              <div><span>Terrain</span><strong id="terrainClass">—</strong></div>
-              <div><span>Local position</span><strong id="positionClass">—</strong></div>
-            </div>
-            <div id="terrainFactor" class="terrain-factor neutral">
-              <span>TERRAIN FLOOD FACTOR</span><strong>WAITING</strong>
-              <p id="terrainReason">Terrain is one component of flood susceptibility; rainfall, drainage, soil and waterways are not yet included.</p>
-            </div>
-            <p class="data-note">Current live elevation service: Copernicus DEM GLO-90 via Open-Meteo. Nine points are sampled across an approximately 1 km × 1 km zone.</p>
-          </div>
-
-              </li>
-              <li id="roadmapTrends" class="roadmap-item pending roadmap-accordion-item" data-detail="detailTrends">
-                <button class="roadmap-toggle" type="button" aria-expanded="false" aria-controls="detailTrends"><span class="roadmap-number">02</span><span class="roadmap-name">NASA historical trends + proxy</span><span class="roadmap-state" aria-label="Waiting"></span></button>
-                <div id="detailTrends" class="roadmap-detail trend-section">
-            <div class="trend-heading">
-              <div>
-                <p class="panel-label">NASA EARTH SYSTEM TREND DETECTIVE</p>
-                <h3>Historical analysis</h3>
-              </div>
-              <select id="trendPeriod" aria-label="Historical analysis period">
-                <option value="10">10 years</option>
-                <option value="20">20 years</option>
-                <option value="25" selected>25 years</option>
-              </select>
-            </div>
-            <p id="trendStatus" class="terrain-status">Select a point to investigate historical NASA precipitation and temperature trends.</p>
-            <div class="trend-tabs" role="group" aria-label="Historical variable">
-              <button class="trend-tab active" type="button" data-variable="rain">Precipitation</button>
-              <button class="trend-tab" type="button" data-variable="temp">Temperature</button>
-            </div>
-            <div class="trend-chart-wrap">
-              <canvas id="trendChart" width="640" height="260" aria-label="Historical trend chart"></canvas>
-            </div>
-            <div class="trend-grid">
-              <div class="terrain-metric"><span>Period</span><strong id="trendYears">—</strong></div>
-              <div class="terrain-metric"><span>Trend</span><strong id="trendSlope">—</strong></div>
-              <div class="terrain-metric"><span>Total change</span><strong id="trendChange">—</strong></div>
-              <div class="terrain-metric"><span>Significance</span><strong id="trendSignificance">—</strong></div>
-            </div>
-            <div id="trendFinding" class="trend-finding neutral">
-              <strong>WAITING FOR LOCATION</strong>
-              <p>HyperFlood will answer: what is changing, where, how much, and whether the detected linear trend is statistically significant.</p>
-            </div>
-            <p class="data-note">Historical source: NASA POWER. Precipitation is derived from GPM IMERG; temperature is derived from MERRA-2. Trend significance uses a two-sided linear-regression test (p &lt; 0.05).</p>
-          </div>
-
-
-              </li>
-              <li id="roadmapSoil" class="roadmap-item pending roadmap-accordion-item" data-detail="detailSoil">
-                <button class="roadmap-toggle" type="button" aria-expanded="false" aria-controls="detailSoil"><span class="roadmap-number">03</span><span class="roadmap-name">Soil wetness + runoff potential</span><span class="roadmap-state" aria-label="Waiting"></span></button>
-                <div id="detailSoil" class="roadmap-detail soil-section">
-            <div class="soil-heading">
-              <div>
-                <p class="panel-label">SOIL &amp; RUNOFF INTELLIGENCE</p>
-                <h3>Infiltration pressure</h3>
-              </div>
-              <span id="soilBadge" class="soil-badge neutral">WAITING</span>
-            </div>
-            <p id="soilStatus" class="terrain-status">Select a point to analyse NASA surface and root-zone wetness.</p>
-            <div class="soil-grid">
-              <div class="terrain-metric"><span>Surface wetness</span><strong id="surfaceWetness">—</strong></div>
-              <div class="terrain-metric"><span>Root-zone wetness</span><strong id="rootWetness">—</strong></div>
-              <div class="terrain-metric"><span>Infiltration potential</span><strong id="infiltrationPotential">—</strong></div>
-              <div class="terrain-metric"><span>Runoff potential</span><strong id="runoffPotential">—</strong></div>
-            </div>
-            <div id="runoffFinding" class="runoff-finding neutral">
-              <strong>WAITING FOR SOIL DATA</strong>
-              <p>HyperFlood will combine soil wetness with terrain position and slope to estimate runoff pressure.</p>
-            </div>
-            <p id="soilSourceNote" class="data-note">NASA POWER soil wetness uses MERRA-2-based surface and root-zone wetness. This is a derived prototype index, not a measured infiltration rate or flood probability.</p>
-          </div>
-
-              </li>
-              <li id="roadmapRivers" class="roadmap-item pending roadmap-accordion-item" data-detail="detailRivers">
-                <button class="roadmap-toggle" type="button" aria-expanded="false" aria-controls="detailRivers"><span class="roadmap-number">04</span><span class="roadmap-name">Rivers &amp; drainage</span><span class="roadmap-state" aria-label="Waiting"></span></button>
-                <div id="detailRivers" class="roadmap-detail drainage-section">
-                  <div class="soil-heading"><div><p class="panel-label">RIVERS &amp; DRAINAGE INTELLIGENCE</p><h3>Nearby waterway context</h3></div><span id="drainageBadge" class="soil-badge neutral">WAITING</span></div>
-                  <p id="drainageStatus" class="terrain-status">Select a point to scan mapped waterways around it.</p>
-                  <div class="soil-grid">
-                    <div class="terrain-metric"><span>Nearest waterway</span><strong id="nearestWaterway">—</strong></div>
-                    <div class="terrain-metric"><span>Distance</span><strong id="waterwayDistance">—</strong></div>
-                    <div class="terrain-metric"><span>Waterway type</span><strong id="waterwayType">—</strong></div>
-                    <div class="terrain-metric"><span>Mapped nearby</span><strong id="waterwayCount">—</strong></div>
-                  </div>
-                  <div id="drainageFinding" class="runoff-finding neutral"><strong>WAITING FOR WATERWAY DATA</strong><p>HyperFlood will identify mapped rivers, streams, canals and drainage channels near the selected point.</p></div>
-                  <p class="data-note">Waterway geometry: OpenStreetMap contributors via Overpass. HyperFlood derives proximity context from mapped features. Missing or unmapped drains can make this layer incomplete; it is not a hydraulic flood model.</p>
-                </div>
-              </li>
-              <li class="roadmap-item future roadmap-accordion-item" data-detail="detailRecentRain"><button class="roadmap-toggle" type="button" aria-expanded="false" aria-controls="detailRecentRain"><span class="roadmap-number">05</span><span class="roadmap-name">Recent precipitation</span><span class="roadmap-state" aria-label="Planned"></span></button><div id="detailRecentRain" class="roadmap-detail future-detail"><strong>Recent precipitation</strong><p>Planned layer: recent rainfall totals and intensity around the selected location.</p></div></li>
-              <li class="roadmap-item future roadmap-accordion-item" data-detail="detailForecast"><button class="roadmap-toggle" type="button" aria-expanded="false" aria-controls="detailForecast"><span class="roadmap-number">06</span><span class="roadmap-name">24h / 48h / 7-day precipitation forecast</span><span class="roadmap-state" aria-label="Planned"></span></button><div id="detailForecast" class="roadmap-detail future-detail"><strong>Precipitation forecast</strong><p>Planned layer: rainfall outlooks for the 24-hour, 48-hour and 7-day warning windows.</p></div></li>
-              <li class="roadmap-item future roadmap-accordion-item" data-detail="detailSurface"><button class="roadmap-toggle" type="button" aria-expanded="false" aria-controls="detailSurface"><span class="roadmap-number">07</span><span class="roadmap-name">Surface water indicators</span><span class="roadmap-state" aria-label="Planned"></span></button><div id="detailSurface" class="roadmap-detail future-detail"><strong>Surface water indicators</strong><p>Planned layer: surface-water conditions that can strengthen or reduce the flood-pressure signal.</p></div></li>
-              <li class="roadmap-item future roadmap-accordion-item" data-detail="detailRisk"><button class="roadmap-toggle" type="button" aria-expanded="false" aria-controls="detailRisk"><span class="roadmap-number">08</span><span class="roadmap-name">Explainable flood-risk assessment</span><span class="roadmap-state" aria-label="Planned"></span></button><div id="detailRisk" class="roadmap-detail future-detail"><strong>Explainable flood-risk assessment</strong><p>Final planned layer: combine terrain, soil, drainage, rainfall, surface water and forecast evidence into an explainable early-warning outlook.</p></div></li>
-            </ul>
-          </div>
-
-          <div class="warning-card prototype-warning">
-            <p class="panel-label">HYPERFLOOD STATUS</p>
-            <h3>Terrain + soil + drainage layers active</h3>
-            <p>This is not yet a flood warning. HyperFlood now combines terrain, NASA trend/soil inputs and mapped river/drainage proximity. The final assessment will add recent rainfall, forecast and surface-water evidence.</p>
-          </div>
-        </aside>
-      </div>
-      <section id="warningBar" class="warning-bar severity-normal blink-enabled" aria-label="Flood early warning placeholder">
-        <div class="warning-bar-heading">
-          <p class="panel-label">FLOOD EARLY WARNING</p>
-          <strong id="warningWindowTitle">24-hour outlook</strong>
-        </div>
-        <div class="warning-placeholder">
-          <span id="warningStatus">Early-warning data will appear here in the final HyperFlood stage.</span>
-        </div>
-        <div class="warning-controls">
-          <div class="warning-toggles" role="group" aria-label="Forecast window">
-          <button class="warning-toggle active" type="button" data-window="24 hours">24 hours</button>
-          <button class="warning-toggle" type="button" data-window="48 hours">48 hours</button>
-          <button class="warning-toggle" type="button" data-window="7 days">7 days</button>
-          </div>
-          <label class="blink-switch" title="Turn warning-bar blinking on or off">
-            <input id="blinkToggle" type="checkbox" checked aria-label="Blink warning bar" />
-            <span class="blink-slider"></span>
-            <span class="blink-label">Blink</span>
-          </label>
-        </div>
-      </section>
-
-    </section>
-  </main>
-
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="script.js"></script>
+<li class="roadmap-item pending roadmap-accordion-item" data-detail="detailSoil" id="roadmapSoil">
+<button aria-controls="detailSoil" aria-expanded="false" class="roadmap-toggle" type="button"><span class="roadmap-number">03</span><span class="roadmap-name">Soil wetness + runoff potential</span><span aria-label="Waiting" class="roadmap-state"></span></button>
+<div class="roadmap-detail soil-section" id="detailSoil">
+<div class="soil-heading">
+<div>
+<p class="panel-label">SOIL &amp; RUNOFF INTELLIGENCE</p>
+<h3>Infiltration pressure</h3>
+</div>
+<span class="soil-badge neutral" id="soilBadge">WAITING</span>
+</div>
+<p class="terrain-status" id="soilStatus">Select a point to analyse NASA surface and root-zone wetness.</p>
+<div class="soil-grid">
+<div class="terrain-metric"><span>Surface wetness</span><strong id="surfaceWetness">—</strong></div>
+<div class="terrain-metric"><span>Root-zone wetness</span><strong id="rootWetness">—</strong></div>
+<div class="terrain-metric"><span>Infiltration potential</span><strong id="infiltrationPotential">—</strong></div>
+<div class="terrain-metric"><span>Runoff potential</span><strong id="runoffPotential">—</strong></div>
+</div>
+<div class="runoff-finding neutral" id="runoffFinding">
+<strong>WAITING FOR SOIL DATA</strong>
+<p>HyperFlood will combine soil wetness with terrain position and slope to estimate runoff pressure.</p>
+</div>
+<p class="data-note" id="soilSourceNote">NASA POWER soil wetness uses MERRA-2-based surface and root-zone wetness. This is a derived prototype index, not a measured infiltration rate or flood probability.</p>
+</div>
+</li>
+<li class="roadmap-item pending roadmap-accordion-item" data-detail="detailRivers" id="roadmapRivers">
+<button aria-controls="detailRivers" aria-expanded="false" class="roadmap-toggle" type="button"><span class="roadmap-number">04</span><span class="roadmap-name">Rivers &amp; drainage</span><span aria-label="Waiting" class="roadmap-state"></span></button>
+<div class="roadmap-detail drainage-section" id="detailRivers">
+<div class="soil-heading"><div><p class="panel-label">RIVERS &amp; DRAINAGE INTELLIGENCE</p><h3>Nearby waterway context</h3></div><span class="soil-badge neutral" id="drainageBadge">WAITING</span></div>
+<p class="terrain-status" id="drainageStatus">Select a point to scan mapped waterways around it.</p>
+<div class="soil-grid">
+<div class="terrain-metric"><span>Nearest waterway</span><strong id="nearestWaterway">—</strong></div>
+<div class="terrain-metric"><span>Distance</span><strong id="waterwayDistance">—</strong></div>
+<div class="terrain-metric"><span>Waterway type</span><strong id="waterwayType">—</strong></div>
+<div class="terrain-metric"><span>Mapped nearby</span><strong id="waterwayCount">—</strong></div>
+</div>
+<div class="runoff-finding neutral" id="drainageFinding"><strong>WAITING FOR WATERWAY DATA</strong><p>HyperFlood will identify mapped rivers, streams, canals and drainage channels near the selected point.</p></div>
+<p class="data-note">Waterway geometry: OpenStreetMap contributors via Overpass. HyperFlood derives proximity context from mapped features. Missing or unmapped drains can make this layer incomplete; it is not a hydraulic flood model.</p>
+</div>
+</li>
+<li class="roadmap-item pending roadmap-accordion-item" data-detail="detailRecentRain" id="roadmapRecentRain"><button aria-controls="detailRecentRain" aria-expanded="false" class="roadmap-toggle" type="button"><span class="roadmap-number">05</span><span class="roadmap-name">Recent precipitation</span><span aria-label="Planned" class="roadmap-state"></span></button><div class="roadmap-detail recent-rain-section" id="detailRecentRain">
+<div class="section-heading"><div><div class="panel-label">NASA DAILY PRECIPITATION</div><h3>Recent precipitation</h3></div><span class="soil-badge neutral" id="recentRainBadge">LOADING</span></div>
+<p class="terrain-status" id="recentRainStatus">Loading recent NASA precipitation…</p>
+<div class="soil-grid">
+<div class="terrain-metric"><span>Latest day</span><strong id="rain1d">—</strong></div>
+<div class="terrain-metric"><span>Last 3 days</span><strong id="rain3d">—</strong></div>
+<div class="terrain-metric"><span>Last 7 days</span><strong id="rain7d">—</strong></div>
+<div class="terrain-metric"><span>Wet days (7d)</span><strong id="rainWetDays">—</strong></div>
+</div>
+<div class="runoff-finding neutral" id="recentRainFinding"><strong>RECENT RAINFALL PRESSURE</strong><p>Waiting for recent precipitation data.</p></div>
+<p class="data-note" id="recentRainSource">Source: NASA POWER Daily API. Meteorological data are supplied at their native source resolution; this is not street-level rainfall.</p>
+</div></li>
+<li class="roadmap-item future roadmap-accordion-item" data-detail="detailForecast"><button aria-controls="detailForecast" aria-expanded="false" class="roadmap-toggle" type="button"><span class="roadmap-number">06</span><span class="roadmap-name">24h / 48h / 7-day precipitation forecast</span><span aria-label="Planned" class="roadmap-state"></span></button><div class="roadmap-detail future-detail" id="detailForecast"><strong>Precipitation forecast</strong><p>Planned layer: rainfall outlooks for the 24-hour, 48-hour and 7-day warning windows.</p></div></li>
+<li class="roadmap-item future roadmap-accordion-item" data-detail="detailSurface"><button aria-controls="detailSurface" aria-expanded="false" class="roadmap-toggle" type="button"><span class="roadmap-number">07</span><span class="roadmap-name">Surface water indicators</span><span aria-label="Planned" class="roadmap-state"></span></button><div class="roadmap-detail future-detail" id="detailSurface"><strong>Surface water indicators</strong><p>Planned layer: surface-water conditions that can strengthen or reduce the flood-pressure signal.</p></div></li>
+<li class="roadmap-item future roadmap-accordion-item" data-detail="detailRisk"><button aria-controls="detailRisk" aria-expanded="false" class="roadmap-toggle" type="button"><span class="roadmap-number">08</span><span class="roadmap-name">Explainable flood-risk assessment</span><span aria-label="Planned" class="roadmap-state"></span></button><div class="roadmap-detail future-detail" id="detailRisk"><strong>Explainable flood-risk assessment</strong><p>Final planned layer: combine terrain, soil, drainage, rainfall, surface water and forecast evidence into an explainable early-warning outlook.</p></div></li>
+</ul>
+</div>
+<div class="warning-card prototype-warning">
+<p class="panel-label">HYPERFLOOD STATUS</p>
+<h3>Terrain + soil + drainage layers active</h3>
+<p>This is not yet a flood warning. HyperFlood now combines terrain, NASA trend/soil inputs and mapped river/drainage proximity. The final assessment will add recent rainfall, forecast and surface-water evidence.</p>
+</div>
+</aside>
+</div>
+<section aria-label="Flood early warning placeholder" class="warning-bar severity-normal blink-enabled" id="warningBar">
+<div class="warning-bar-heading">
+<p class="panel-label">FLOOD EARLY WARNING</p>
+<strong id="warningWindowTitle">24-hour outlook</strong>
+</div>
+<div class="warning-placeholder">
+<span id="warningStatus">Early-warning data will appear here in the final HyperFlood stage.</span>
+</div>
+<div class="warning-controls">
+<div aria-label="Forecast window" class="warning-toggles" role="group">
+<button class="warning-toggle active" data-window="24 hours" type="button">24 hours</button>
+<button class="warning-toggle" data-window="48 hours" type="button">48 hours</button>
+<button class="warning-toggle" data-window="7 days" type="button">7 days</button>
+</div>
+<label class="blink-switch" title="Turn warning-bar blinking on or off">
+<input aria-label="Blink warning bar" checked="" id="blinkToggle" type="checkbox"/>
+<span class="blink-slider"></span>
+<span class="blink-label">Blink</span>
+</label>
+</div>
+</section>
+</section>
+</main>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="script.js"></script>
 </body>
 </html>

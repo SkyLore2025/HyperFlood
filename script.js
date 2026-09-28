@@ -480,7 +480,8 @@ const roadmapItems = {
   terrain: document.getElementById("roadmapTerrain"),
   trends: document.getElementById("roadmapTrends"),
   soil: document.getElementById("roadmapSoil"),
-  rivers: document.getElementById("roadmapRivers")
+  rivers: document.getElementById("roadmapRivers"),
+  recentRain: document.getElementById("roadmapRecentRain")
 };
 
 function setRoadmapState(key, state) {
@@ -502,6 +503,7 @@ function resetRoadmapForPoint() {
   setRoadmapState("trends", "loading");
   setRoadmapState("soil", "loading");
   setRoadmapState("rivers", "loading");
+  setRoadmapState("recentRain", "loading");
 }
 
 // ==========================================================
@@ -977,3 +979,73 @@ updateAnalysisPoint = function(lat, lon, label) {
     });
   });
 })();
+
+
+// ==========================================================
+// V11 RECENT PRECIPITATION — NASA POWER Daily API
+// Added as an independent fifth analysis; V10 layers are unchanged.
+// ==========================================================
+const recentRainBadge = document.getElementById("recentRainBadge");
+const recentRainStatus = document.getElementById("recentRainStatus");
+const rain1d = document.getElementById("rain1d");
+const rain3d = document.getElementById("rain3d");
+const rain7d = document.getElementById("rain7d");
+const rainWetDays = document.getElementById("rainWetDays");
+const recentRainFinding = document.getElementById("recentRainFinding");
+const recentRainSource = document.getElementById("recentRainSource");
+let recentRainRequestId = 0;
+
+function renderRecentRainLoading(){
+  recentRainBadge.className="soil-badge neutral"; recentRainBadge.textContent="LOADING";
+  recentRainStatus.textContent="Loading recent NASA precipitation…";
+  rain1d.textContent=rain3d.textContent=rain7d.textContent=rainWetDays.textContent="…";
+  recentRainFinding.className="runoff-finding neutral";
+  recentRainFinding.querySelector("strong").textContent="RECENT RAINFALL PRESSURE";
+  recentRainFinding.querySelector("p").textContent="Waiting for recent precipitation data.";
+}
+function rainPressure(total7){
+  if(total7 >= 100) return {label:"VERY HIGH",cls:"high",text:"Substantial rainfall has accumulated over the latest seven available days. Combined with wet soil, runoff and drainage conditions, this can increase flood pressure."};
+  if(total7 >= 50) return {label:"HIGH",cls:"high",text:"A notable seven-day rainfall accumulation is present. Soil wetness, terrain and drainage should be considered alongside it."};
+  if(total7 >= 20) return {label:"MODERATE",cls:"moderate",text:"Recent rainfall is meaningful but not extreme by this prototype threshold. Local flood relevance depends on the other HyperFlood layers."};
+  return {label:"LOW",cls:"low",text:"Recent seven-day rainfall accumulation is relatively low by this prototype threshold. This does not rule out highly localized rainfall or flooding."};
+}
+function renderRecentRain(data){
+  const p=rainPressure(data.total7d);
+  recentRainBadge.className=`soil-badge ${p.cls}`; recentRainBadge.textContent=p.label;
+  recentRainStatus.textContent=`Latest available NASA daily precipitation: ${data.latestDate}.`;
+  rain1d.textContent=`${data.latest1d.toFixed(1)} mm`;
+  rain3d.textContent=`${data.total3d.toFixed(1)} mm`;
+  rain7d.textContent=`${data.total7d.toFixed(1)} mm`;
+  rainWetDays.textContent=`${data.wetDays7d} / 7`;
+  recentRainFinding.className=`runoff-finding ${p.cls}`;
+  recentRainFinding.querySelector("strong").textContent=`${p.label} RECENT RAINFALL PRESSURE`;
+  recentRainFinding.querySelector("p").textContent=p.text;
+  recentRainSource.textContent=`Source: NASA POWER Daily API (${data.parameter}); latest available day ${data.latestDate}. POWER meteorological data are not street-level observations. Rainfall-pressure labels are HyperFlood prototype interpretations.`;
+}
+function renderRecentRainError(error){
+  console.error("Recent precipitation error:",error);
+  recentRainBadge.className="soil-badge neutral"; recentRainBadge.textContent="UNAVAILABLE";
+  recentRainStatus.textContent="Recent NASA precipitation could not be loaded for this point.";
+  rain1d.textContent=rain3d.textContent=rain7d.textContent=rainWetDays.textContent="—";
+  recentRainFinding.className="runoff-finding neutral";
+  recentRainFinding.querySelector("strong").textContent="DATA UNAVAILABLE";
+  recentRainFinding.querySelector("p").textContent="The other HyperFlood analyses remain available. Try this point again later.";
+}
+async function analyseRecentPrecipitation(lat,lon){
+  const requestId=++recentRainRequestId; renderRecentRainLoading(); setRoadmapState("recentRain","loading");
+  try{
+    const url=new URL("/api/recent-rain",window.location.origin);
+    url.searchParams.set("lat",Number(lat).toFixed(5)); url.searchParams.set("lon",Number(lon).toFixed(5));
+    const response=await fetch(url,{headers:{Accept:"application/json"},cache:"no-store"});
+    const data=await response.json();
+    if(!response.ok || !data?.ok) throw new Error(data?.error || "Recent precipitation service unavailable");
+    if(requestId!==recentRainRequestId) return; renderRecentRain(data); setRoadmapState("recentRain","done");
+  }catch(error){ if(requestId!==recentRainRequestId) return; renderRecentRainError(error); setRoadmapState("recentRain","error"); }
+}
+
+// V11 wraps the stable V10 point-update flow. No existing analysis is modified.
+const v11BaseUpdateAnalysisPoint = updateAnalysisPoint;
+updateAnalysisPoint = function(lat,lon,label){
+  v11BaseUpdateAnalysisPoint(lat,lon,label);
+  analyseRecentPrecipitation(lat,lon);
+};

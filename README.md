@@ -1,12 +1,12 @@
-# HyperFlood V10 — Rivers & Drainage Intelligence
+# HyperFlood V11
 
-V10 builds on the stable V9 accordion version.
+Stable V10 plus Layer 05 — Recent Precipitation.
 
-New layer 04:
-- scans mapped rivers, streams, canals, drains and ditches within 5 km
-- reports nearest mapped waterway, type, distance and feature count
-- draws returned waterways on the Leaflet map
-- uses a Vercel serverless `/api/waterways` proxy to OpenStreetMap Overpass
-- preserves spinner → tick/error roadmap states and one-open-at-a-time accordion behaviour
+V11 changes only:
+- NASA Historical Trends + Proxy moved to roadmap position 01.
+- Elevation & Terrain moved to position 02.
+- Roadmap rows made more compact so all eight headings fit more easily without scrolling.
+- Layer 05 now uses the NASA POWER Daily API for the latest available 1-day, 3-day and 7-day precipitation totals.
+- Existing terrain, historical trends, soil/runoff and rivers/drainage functionality is unchanged.
 
-Scientific note: mapped-waterway proximity is contextual evidence, not flood probability or hydraulic modelling. OpenStreetMap coverage varies by location. NASA remains used in the historical/soil layers; the drainage geometry itself is from OpenStreetMap.
+Recent rainfall is a NASA POWER meteorological point/grid product, not street-level rainfall. HyperFlood rainfall-pressure labels are prototype interpretations, not official flood warnings.

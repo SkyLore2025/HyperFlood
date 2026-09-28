@@ -450,3 +450,13 @@ body { overflow: hidden; }
 /* V10 rivers & drainage */
 .drainage-section { padding-top: 14px; }
 #detailRivers .terrain-metric strong { text-transform: capitalize; }
+
+
+/* V11 compact roadmap: all eight headers fit more comfortably on screen. */
+.analysis-roadmap .roadmap-toggle { min-height: 42px; padding: 5px 0; grid-template-columns: 30px 1fr 22px; gap: 8px; }
+.analysis-roadmap .roadmap-number { width: 24px; height: 24px; font-size: 10px; }
+.analysis-roadmap .roadmap-name { font-size: 12px; line-height: 1.22; }
+.analysis-roadmap .roadmap-state { width: 16px; height: 16px; }
+.analysis-roadmap .roadmap-item.loading .roadmap-state::before { width: 12px; height: 12px; }
+.roadmap-detail { padding-left: 38px; }
+.recent-rain-section { padding-top: 12px; }
