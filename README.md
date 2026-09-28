@@ -1,56 +1,12 @@
-# HyperFlood v9
+# HyperFlood V10 — Rivers & Drainage Intelligence
 
-HyperFlood is a prototype for global, hyperlocal flood intelligence using a selected map point, terrain analysis and NASA Earth-system historical trends.
+V10 builds on the stable V9 accordion version.
 
-## What changed in v9
+New layer 04:
+- scans mapped rivers, streams, canals, drains and ditches within 5 km
+- reports nearest mapped waterway, type, distance and feature count
+- draws returned waterways on the Leaflet map
+- uses a Vercel serverless `/api/waterways` proxy to OpenStreetMap Overpass
+- preserves spinner → tick/error roadmap states and one-open-at-a-time accordion behaviour
 
-Version 7 moves the NASA POWER historical-data request to a Vercel serverless function:
-
-Browser → `/api/power` → NASA POWER
-
-This is the key architectural change from v6. The browser no longer calls NASA POWER directly.
-
-## Files
-
-- `index.html` — frontend
-- `style.css` — frontend styling
-- `script.js` — map, search, terrain and historical trend logic
-- `api/power.js` — Vercel serverless NASA POWER proxy
-- `package.json` — pins Node.js 24.x for the Vercel deployment
-
-## Deployment
-
-This project should be deployed on Vercel rather than GitHub Pages if you want the `/api/power` function to run.
-
-1. Upload/push this folder to a GitHub repository.
-2. Import that repository into Vercel.
-3. Use the default/static deployment settings.
-4. Ensure the Vercel Node.js runtime is 24.x.
-5. Open the Vercel project URL.
-6. Search for a place and check the NASA Earth System Trend Detective section.
-
-GitHub Pages can still host the static files, but it cannot execute `api/power.js`; the v9 historical analysis therefore expects the Vercel deployment URL.
-
-## NASA POWER request
-
-The proxy requests monthly `T2M` and `PRECTOTCORR` data for the last complete 10, 20 or 25 years. If the corrected precipitation parameter is unavailable, it retries with `PRECTOT`.
-
-The frontend aggregates complete monthly observations into annual precipitation and annual mean temperature, then calculates a simple linear trend and two-sided significance test.
-
-## Scientific note
-
-The historical trend layer is a climate/meteorological trend investigation, not a street-level flood forecast. NASA POWER data should not be presented as street-level rainfall measurements. HyperFlood's hyperlocal component comes from the selected analysis point and the combination of multiple environmental layers planned for later versions.
-
-
-## V8 fixes
-- Browser now calls `/api/power` with `lat` and `lon`, matching the Vercel proxy.
-- NASA POWER annual aggregate key ending in `13` is excluded from monthly trend calculations.
-- Vercel Node.js runtime is pinned to 24.x.
-
-
-## V9 — Soil & Runoff Intelligence
-V9 adds a NASA POWER soil/runoff layer using surface soil wetness (GWETTOP), root-zone soil wetness (GWETROOT), and precipitation. HyperFlood combines these with the existing terrain layer to produce transparent derived labels for infiltration potential and runoff potential. These labels are exploratory prototype indices, not measured infiltration rates or flood probabilities.
-
-The Vercel function is available at `/api/power?mode=soil&lat=...&lon=...`.
-
-NASA POWER is a global meteorological/environmental data service. Its surface wetness variable represents the 0–5 cm soil layer and its root-zone wetness covers the plant-root-zone concept.
+Scientific note: mapped-waterway proximity is contextual evidence, not flood probability or hydraulic modelling. OpenStreetMap coverage varies by location. NASA remains used in the historical/soil layers; the drainage geometry itself is from OpenStreetMap.

@@ -479,7 +479,8 @@ updateAnalysisPoint = function(lat, lon, label) {
 const roadmapItems = {
   terrain: document.getElementById("roadmapTerrain"),
   trends: document.getElementById("roadmapTrends"),
-  soil: document.getElementById("roadmapSoil")
+  soil: document.getElementById("roadmapSoil"),
+  rivers: document.getElementById("roadmapRivers")
 };
 
 function setRoadmapState(key, state) {
@@ -500,6 +501,7 @@ function resetRoadmapForPoint() {
   setRoadmapState("terrain", "loading");
   setRoadmapState("trends", "loading");
   setRoadmapState("soil", "loading");
+  setRoadmapState("rivers", "loading");
 }
 
 // ==========================================================
@@ -837,6 +839,113 @@ updateAnalysisPoint = function(lat, lon, label) {
   resetRoadmapForPoint();
   v9UpdateAnalysisPoint(lat, lon, label);
   analyseSoilRunoff(lat, lon);
+};
+
+
+// ==========================================================
+// V10 RIVERS & DRAINAGE INTELLIGENCE
+// Mapped waterway geometry comes from OpenStreetMap via our Vercel proxy.
+// HyperFlood derives proximity context; this is not a hydraulic model.
+// ==========================================================
+const drainageStatus = document.getElementById("drainageStatus");
+const drainageBadge = document.getElementById("drainageBadge");
+const nearestWaterway = document.getElementById("nearestWaterway");
+const waterwayDistance = document.getElementById("waterwayDistance");
+const waterwayType = document.getElementById("waterwayType");
+const waterwayCount = document.getElementById("waterwayCount");
+const drainageFinding = document.getElementById("drainageFinding");
+let drainageRequestId = 0;
+let waterwayLayer = null;
+
+function renderDrainageLoading() {
+  if (!drainageStatus) return;
+  drainageStatus.textContent = "Scanning mapped rivers and drainage channels within 5 km…";
+  drainageBadge.className = "soil-badge neutral";
+  drainageBadge.textContent = "LOADING";
+  nearestWaterway.textContent = waterwayDistance.textContent = waterwayType.textContent = waterwayCount.textContent = "…";
+  drainageFinding.className = "runoff-finding neutral";
+  drainageFinding.querySelector("strong").textContent = "ANALYSING DRAINAGE";
+  drainageFinding.querySelector("p").textContent = "Finding the nearest mapped river, stream, canal or drain and measuring its proximity to the selected point.";
+}
+
+function drainageClass(distanceM, found) {
+  if (!found) return {label:"NO MAPPED WATERWAY", cls:"neutral", text:"No mapped river or drainage channel was returned within 5 km. This does not prove that no local drain exists."};
+  if (distanceM <= 250) return {label:"VERY CLOSE", cls:"high", text:"A mapped waterway is very close to the selected point. Proximity can matter during high flow, but does not by itself indicate flood risk."};
+  if (distanceM <= 750) return {label:"NEARBY", cls:"moderate", text:"A mapped waterway is nearby. Terrain, rainfall, channel capacity and flow direction determine whether that proximity increases flood exposure."};
+  if (distanceM <= 2000) return {label:"MODERATE DISTANCE", cls:"low", text:"The nearest mapped waterway is within the wider local area. Its flood relevance depends on terrain and hydrologic connectivity."};
+  return {label:"DISTANT", cls:"low", text:"The nearest mapped waterway found is relatively distant from the selected point within this 5 km scan."};
+}
+
+function clearWaterwayLayer() {
+  if (waterwayLayer && map) { map.removeLayer(waterwayLayer); waterwayLayer = null; }
+}
+
+function renderDrainage(data) {
+  clearWaterwayLayer();
+  const n = data.nearest;
+  const info = drainageClass(n?.distanceM ?? Infinity, !!n);
+  nearestWaterway.textContent = n?.name || (n ? "Unnamed mapped waterway" : "None within 5 km");
+  waterwayDistance.textContent = n ? (n.distanceM < 1000 ? `${Math.round(n.distanceM)} m` : `${(n.distanceM/1000).toFixed(2)} km`) : "> 5 km / unavailable";
+  waterwayType.textContent = n?.type ? n.type.replaceAll("_", " ") : "—";
+  waterwayCount.textContent = String(data.count ?? 0);
+  drainageBadge.className = `soil-badge ${info.cls}`;
+  drainageBadge.textContent = info.label;
+  drainageFinding.className = `runoff-finding ${info.cls}`;
+  drainageFinding.querySelector("strong").textContent = n ? `${info.label} WATERWAY PROXIMITY` : "NO MAPPED WATERWAY FOUND";
+  drainageFinding.querySelector("p").textContent = info.text;
+  drainageStatus.textContent = `Waterway scan complete for a 5 km radius. ${data.count || 0} mapped features returned.`;
+
+  if (map && Array.isArray(data.features) && data.features.length) {
+    waterwayLayer = L.layerGroup();
+    data.features.forEach(f => {
+      if (!Array.isArray(f.geometry) || f.geometry.length < 2) return;
+      const line = L.polyline(f.geometry.map(p => [p.lat,p.lon]), {weight: 3, opacity: .7});
+      line.bindTooltip(`${f.name || "Unnamed"} · ${(f.type || "waterway").replaceAll("_"," ")}`);
+      waterwayLayer.addLayer(line);
+    });
+    waterwayLayer.addTo(map);
+  }
+}
+
+function renderDrainageError(error) {
+  console.error("Drainage analysis error:", error);
+  clearWaterwayLayer();
+  drainageStatus.textContent = "Mapped river/drainage data could not be loaded for this point.";
+  drainageBadge.className = "soil-badge neutral";
+  drainageBadge.textContent = "UNAVAILABLE";
+  nearestWaterway.textContent = waterwayDistance.textContent = waterwayType.textContent = waterwayCount.textContent = "—";
+  drainageFinding.className = "runoff-finding neutral";
+  drainageFinding.querySelector("strong").textContent = "DATA UNAVAILABLE";
+  drainageFinding.querySelector("p").textContent = "The other HyperFlood analyses remain available. Try this location again later.";
+}
+
+async function analyseRiversDrainage(lat, lon) {
+  const requestId = ++drainageRequestId;
+  renderDrainageLoading();
+  setRoadmapState("rivers", "loading");
+  try {
+    const url = new URL("/api/waterways", window.location.origin);
+    url.searchParams.set("lat", Number(lat).toFixed(5));
+    url.searchParams.set("lon", Number(lon).toFixed(5));
+    const response = await fetch(url, {headers:{Accept:"application/json"}, cache:"no-store"});
+    const data = await response.json();
+    if (!response.ok || !data?.ok) throw new Error(data?.error || "Waterway service unavailable");
+    if (requestId !== drainageRequestId) return;
+    renderDrainage(data);
+    setRoadmapState("rivers", "done");
+  } catch (error) {
+    if (requestId !== drainageRequestId) return;
+    renderDrainageError(error);
+    setRoadmapState("rivers", "error");
+  }
+}
+
+// V10 wraps the stable V9 point-update flow. Existing terrain, trends and soil
+// analyses are untouched; drainage is added as a fourth independent analysis.
+const v10BaseUpdateAnalysisPoint = updateAnalysisPoint;
+updateAnalysisPoint = function(lat, lon, label) {
+  v10BaseUpdateAnalysisPoint(lat, lon, label);
+  analyseRiversDrainage(lat, lon);
 };
 
 // V9 compact Analysis Roadmap accordion.

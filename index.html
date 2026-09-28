@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>HyperFlood | Hyperlocal Flood Intelligence</title>
+  <title>HyperFlood V10 | Hyperlocal Flood Intelligence</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="style.css" />
 </head>
@@ -27,8 +27,8 @@
         </form>
 
         <div class="prototype-note">
-          <strong>Prototype v9</strong>
-          <span>Global map + Terrain Intelligence + NASA Trend Detective + Soil/Runoff Intelligence + serverless NASA data proxy</span>
+          <strong>Prototype v10</strong>
+          <span>Global map + Terrain + NASA Trends + Soil/Runoff + Rivers & Drainage Intelligence</span>
         </div>
       </div>
     </section>
@@ -149,7 +149,21 @@
           </div>
 
               </li>
-              <li class="roadmap-item future roadmap-accordion-item" data-detail="detailRivers"><button class="roadmap-toggle" type="button" aria-expanded="false" aria-controls="detailRivers"><span class="roadmap-number">04</span><span class="roadmap-name">Rivers &amp; drainage</span><span class="roadmap-state" aria-label="Planned"></span></button><div id="detailRivers" class="roadmap-detail future-detail"><strong>Rivers &amp; drainage</strong><p>Planned next layer: nearby rivers, streams, drainage paths and the selected point’s relationship to them.</p></div></li>
+              <li id="roadmapRivers" class="roadmap-item pending roadmap-accordion-item" data-detail="detailRivers">
+                <button class="roadmap-toggle" type="button" aria-expanded="false" aria-controls="detailRivers"><span class="roadmap-number">04</span><span class="roadmap-name">Rivers &amp; drainage</span><span class="roadmap-state" aria-label="Waiting"></span></button>
+                <div id="detailRivers" class="roadmap-detail drainage-section">
+                  <div class="soil-heading"><div><p class="panel-label">RIVERS &amp; DRAINAGE INTELLIGENCE</p><h3>Nearby waterway context</h3></div><span id="drainageBadge" class="soil-badge neutral">WAITING</span></div>
+                  <p id="drainageStatus" class="terrain-status">Select a point to scan mapped waterways around it.</p>
+                  <div class="soil-grid">
+                    <div class="terrain-metric"><span>Nearest waterway</span><strong id="nearestWaterway">—</strong></div>
+                    <div class="terrain-metric"><span>Distance</span><strong id="waterwayDistance">—</strong></div>
+                    <div class="terrain-metric"><span>Waterway type</span><strong id="waterwayType">—</strong></div>
+                    <div class="terrain-metric"><span>Mapped nearby</span><strong id="waterwayCount">—</strong></div>
+                  </div>
+                  <div id="drainageFinding" class="runoff-finding neutral"><strong>WAITING FOR WATERWAY DATA</strong><p>HyperFlood will identify mapped rivers, streams, canals and drainage channels near the selected point.</p></div>
+                  <p class="data-note">Waterway geometry: OpenStreetMap contributors via Overpass. HyperFlood derives proximity context from mapped features. Missing or unmapped drains can make this layer incomplete; it is not a hydraulic flood model.</p>
+                </div>
+              </li>
               <li class="roadmap-item future roadmap-accordion-item" data-detail="detailRecentRain"><button class="roadmap-toggle" type="button" aria-expanded="false" aria-controls="detailRecentRain"><span class="roadmap-number">05</span><span class="roadmap-name">Recent precipitation</span><span class="roadmap-state" aria-label="Planned"></span></button><div id="detailRecentRain" class="roadmap-detail future-detail"><strong>Recent precipitation</strong><p>Planned layer: recent rainfall totals and intensity around the selected location.</p></div></li>
               <li class="roadmap-item future roadmap-accordion-item" data-detail="detailForecast"><button class="roadmap-toggle" type="button" aria-expanded="false" aria-controls="detailForecast"><span class="roadmap-number">06</span><span class="roadmap-name">24h / 48h / 7-day precipitation forecast</span><span class="roadmap-state" aria-label="Planned"></span></button><div id="detailForecast" class="roadmap-detail future-detail"><strong>Precipitation forecast</strong><p>Planned layer: rainfall outlooks for the 24-hour, 48-hour and 7-day warning windows.</p></div></li>
               <li class="roadmap-item future roadmap-accordion-item" data-detail="detailSurface"><button class="roadmap-toggle" type="button" aria-expanded="false" aria-controls="detailSurface"><span class="roadmap-number">07</span><span class="roadmap-name">Surface water indicators</span><span class="roadmap-state" aria-label="Planned"></span></button><div id="detailSurface" class="roadmap-detail future-detail"><strong>Surface water indicators</strong><p>Planned layer: surface-water conditions that can strengthen or reduce the flood-pressure signal.</p></div></li>
@@ -159,8 +173,8 @@
 
           <div class="warning-card prototype-warning">
             <p class="panel-label">HYPERFLOOD STATUS</p>
-            <h3>Terrain layer active</h3>
-            <p>This is not yet a flood warning. Soil/runoff pressure is a derived prototype layer. The final assessment will combine terrain, rainfall, drainage, surface water and forecast information.</p>
+            <h3>Terrain + soil + drainage layers active</h3>
+            <p>This is not yet a flood warning. HyperFlood now combines terrain, NASA trend/soil inputs and mapped river/drainage proximity. The final assessment will add recent rainfall, forecast and surface-water evidence.</p>
           </div>
         </aside>
       </div>
