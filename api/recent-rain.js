@@ -32,7 +32,7 @@ export default async function handler(req,res){
     catch(e){ parameter="PRECTOT"; data=await requestDaily(parameter,lat,lon,ymd(start),ymd(end)); }
     const values=data?.properties?.parameter?.[parameter] || data?.parameter?.[parameter];
     if(!values) throw new Error("NASA POWER returned no daily precipitation series.");
-    const rows=Object.entries(values).filter(([k,v])=>/^\\d{8}$/.test(k)&&Number.isFinite(Number(v))&&Number(v)>-900).sort((a,b)=>a[0].localeCompare(b[0])).map(([date,value])=>({date,value:Math.max(0,Number(value))}));
+    const rows=Object.entries(values).filter(([k,v])=>/^\d{8}$/.test(k)&&Number.isFinite(Number(v))&&Number(v)>-900).sort((a,b)=>a[0].localeCompare(b[0])).map(([date,value])=>({date,value:Math.max(0,Number(value))}));
     if(rows.length<7) throw new Error("Fewer than seven valid daily precipitation values were available.");
     const last7=rows.slice(-7), last3=rows.slice(-3), latest=rows.at(-1);
     const sum=a=>a.reduce((n,x)=>n+x.value,0);
