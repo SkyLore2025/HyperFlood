@@ -482,7 +482,8 @@ const roadmapItems = {
   soil: document.getElementById("roadmapSoil"),
   rivers: document.getElementById("roadmapRivers"),
   recentRain: document.getElementById("roadmapRecentRain"),
-  forecast: document.getElementById("roadmapForecast")
+  forecast: document.getElementById("roadmapForecast"),
+  integration: document.getElementById("roadmapIntegration")
 };
 
 function setRoadmapState(key, state) {
@@ -497,6 +498,7 @@ function setRoadmapState(key, state) {
       state === "done" ? "Complete" : state === "loading" ? "Loading" : state === "error" ? "Unavailable" : "Waiting"
     );
   }
+  if (key !== "integration" && typeof scheduleFloodPressureIntegration === "function") scheduleFloodPressureIntegration();
 }
 
 function resetRoadmapForPoint() {
@@ -506,6 +508,7 @@ function resetRoadmapForPoint() {
   setRoadmapState("rivers", "loading");
   setRoadmapState("recentRain", "loading");
   setRoadmapState("forecast", "loading");
+  setRoadmapState("integration", "loading");
 }
 
 // ==========================================================
@@ -1123,4 +1126,118 @@ const v12BaseUpdateAnalysisPoint = updateAnalysisPoint;
 updateAnalysisPoint = function(lat,lon,label){
   v12BaseUpdateAnalysisPoint(lat,lon,label);
   analyseForecastPrecipitation(lat,lon);
+};
+
+
+// ==========================================================
+// V13 FLOOD PRESSURE INTEGRATION
+// Combines the already-working V12 layers. No new external API is introduced.
+// The score is deliberately transparent and is NOT a flood probability.
+// ==========================================================
+const integrationBadge = document.getElementById("integrationBadge");
+const integrationStatus = document.getElementById("integrationStatus");
+const pressureScore = document.getElementById("pressureScore");
+const pressureLevel = document.getElementById("pressureLevel");
+const pressureEvidence = document.getElementById("pressureEvidence");
+const pressureDriver = document.getElementById("pressureDriver");
+const pressureBreakdown = document.getElementById("pressureBreakdown");
+const integrationFinding = document.getElementById("integrationFinding");
+let integrationTimer = null;
+
+function parseMetric(el){
+  const n = Number.parseFloat(String(el?.textContent || "").replace(/[^0-9.+-]/g,""));
+  return Number.isFinite(n) ? n : null;
+}
+function integrationLevel(score){
+  if(score >= 70) return {label:"VERY HIGH",cls:"high"};
+  if(score >= 50) return {label:"HIGH",cls:"high"};
+  if(score >= 30) return {label:"MODERATE",cls:"moderate"};
+  return {label:"LOW",cls:"low"};
+}
+function contributionRow(label, points, max, note){
+  const pct = max ? Math.max(0,Math.min(100,(points/max)*100)) : 0;
+  return `<div class="pressure-row"><div class="pressure-row-head"><span>${label}</span><strong>${points.toFixed(0)} / ${max}</strong></div><div class="pressure-track"><span style="width:${pct.toFixed(0)}%"></span></div><small>${note}</small></div>`;
+}
+function renderIntegrationWaiting(){
+  if(!integrationBadge) return;
+  integrationBadge.className="soil-badge neutral"; integrationBadge.textContent="ANALYSING";
+  integrationStatus.textContent="Waiting for terrain, soil, drainage, recent rainfall and forecast rainfall to finish.";
+  pressureScore.textContent=pressureLevel.textContent=pressureEvidence.textContent=pressureDriver.textContent="…";
+  pressureBreakdown.innerHTML="";
+  integrationFinding.className="runoff-finding neutral";
+  integrationFinding.querySelector("strong").textContent="COMBINING ENVIRONMENTAL EVIDENCE";
+  integrationFinding.querySelector("p").textContent="The index will appear when the active short-term flood-pressure layers have completed.";
+}
+function calculateFloodPressureIntegration(){
+  if(!integrationBadge) return;
+  const required=["terrain","soil","rivers","recentRain","forecast"];
+  const stillLoading=required.some(k=>roadmapItems[k]?.classList.contains("loading") || roadmapItems[k]?.classList.contains("pending"));
+  if(stillLoading){ renderIntegrationWaiting(); setRoadmapState("integration","loading"); return; }
+
+  const parts=[];
+  // Terrain: low-lying/flat locations can favour local accumulation. Max 15.
+  let terrainPts=0, terrainNote="Terrain data unavailable";
+  if(roadmapItems.terrain?.classList.contains("done")){
+    const pos=String(positionClass?.textContent||""); const slope=parseMetric(slopeValue);
+    if(/low-lying/i.test(pos)) terrainPts+=10; else if(/near local average/i.test(pos)) terrainPts+=4;
+    if(slope!==null && slope<2) terrainPts+=5; else if(slope!==null && slope<5) terrainPts+=2;
+    terrainNote=`${pos || "Terrain position available"}${slope!==null?`, slope ${slope.toFixed(1)}°`:""}`;
+    parts.push({label:"Terrain",points:Math.min(15,terrainPts),max:15,note:terrainNote});
+  }
+  // Soil/runoff: use the existing V9 derived class. Max 25.
+  if(roadmapItems.soil?.classList.contains("done")){
+    const r=String(runoffPotential?.textContent||"").toUpperCase();
+    const p=r.includes("HIGH")?25:r.includes("MODERATE")?14:5;
+    parts.push({label:"Soil + runoff",points:p,max:25,note:`Existing HyperFlood runoff potential: ${r || "available"}`});
+  }
+  // Drainage proximity: max 15.
+  if(roadmapItems.rivers?.classList.contains("done")){
+    const d=parseMetric(waterwayDistance); let metres=null;
+    if(d!==null) metres=/km/i.test(String(waterwayDistance?.textContent||""))?d*1000:d;
+    let p=0; if(metres!==null){ if(metres<=250)p=15; else if(metres<=750)p=10; else if(metres<=2000)p=5; else p=1; }
+    parts.push({label:"River / drainage proximity",points:p,max:15,note:metres===null?"No mapped distance available":`Nearest mapped waterway: ${waterwayDistance.textContent}`});
+  }
+  // Recent rain: max 20, reaches max at 100 mm / 7d.
+  if(roadmapItems.recentRain?.classList.contains("done")){
+    const r7=parseMetric(rain7d) ?? 0; const p=Math.min(20,(Math.max(0,r7)/100)*20);
+    parts.push({label:"Recent precipitation",points:p,max:20,note:`Latest 7-day accumulation: ${r7.toFixed(1)} mm`});
+  }
+  // Forecast: max 25, based on the strongest normalized forecast window.
+  if(roadmapItems.forecast?.classList.contains("done")){
+    const f24=parseMetric(forecast24h)??0, f48=parseMetric(forecast48h)??0, f7=parseMetric(forecast7d)??0;
+    const norm=Math.max(f24/50,f48/80,f7/150); const p=Math.min(25,Math.max(0,norm)*25);
+    parts.push({label:"Forecast precipitation",points:p,max:25,note:`24h ${f24.toFixed(1)} mm · 48h ${f48.toFixed(1)} mm · 7d ${f7.toFixed(1)} mm`});
+  }
+
+  const availableMax=parts.reduce((a,b)=>a+b.max,0);
+  if(availableMax < 50 || parts.length < 3){
+    integrationBadge.className="soil-badge neutral"; integrationBadge.textContent="LIMITED DATA";
+    integrationStatus.textContent="Too few active layers returned usable evidence for a stable integrated signal.";
+    pressureScore.textContent="—"; pressureLevel.textContent="LIMITED"; pressureEvidence.textContent=`${parts.length} / 5`; pressureDriver.textContent="—";
+    pressureBreakdown.innerHTML=parts.map(p=>contributionRow(p.label,p.points,p.max,p.note)).join("");
+    integrationFinding.className="runoff-finding neutral"; integrationFinding.querySelector("strong").textContent="INSUFFICIENT EVIDENCE"; integrationFinding.querySelector("p").textContent="Individual HyperFlood layers remain available. The integrated index requires at least three usable short-term evidence layers.";
+    setRoadmapState("integration","error"); return;
+  }
+  // Normalize to 0–100 if a non-critical layer is unavailable rather than silently treating missing data as zero.
+  const raw=parts.reduce((a,b)=>a+b.points,0); const score=Math.round(raw/availableMax*100); const level=integrationLevel(score);
+  const driver=[...parts].sort((a,b)=>(b.points/b.max)-(a.points/a.max))[0];
+  integrationBadge.className=`soil-badge ${level.cls}`; integrationBadge.textContent=level.label;
+  integrationStatus.textContent="Integrated pressure signal calculated from the available active HyperFlood layers.";
+  pressureScore.textContent=`${score} / 100`; pressureLevel.textContent=level.label; pressureEvidence.textContent=`${parts.length} / 5`; pressureDriver.textContent=driver?.label || "—";
+  pressureBreakdown.innerHTML=parts.map(p=>contributionRow(p.label,p.points,p.max,p.note)).join("");
+  integrationFinding.className=`runoff-finding ${level.cls}`; integrationFinding.querySelector("strong").textContent=`${level.label} FLOOD PRESSURE`;
+  const top=[...parts].sort((a,b)=>(b.points/b.max)-(a.points/a.max)).slice(0,2).map(p=>p.label.toLowerCase()).join(" and ");
+  integrationFinding.querySelector("p").textContent=`The strongest current contributions are ${top}. This score integrates environmental pressure signals; it is not a probability of flooding or an official warning.`;
+  setRoadmapState("integration","done");
+}
+function scheduleFloodPressureIntegration(){
+  clearTimeout(integrationTimer);
+  integrationTimer=setTimeout(calculateFloodPressureIntegration,120);
+}
+
+const v13BaseUpdateAnalysisPoint = updateAnalysisPoint;
+updateAnalysisPoint = function(lat,lon,label){
+  renderIntegrationWaiting(); setRoadmapState("integration","loading");
+  v13BaseUpdateAnalysisPoint(lat,lon,label);
+  scheduleFloodPressureIntegration();
 };

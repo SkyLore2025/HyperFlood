@@ -460,3 +460,13 @@ body { overflow: hidden; }
 .analysis-roadmap .roadmap-item.loading .roadmap-state::before { width: 12px; height: 12px; }
 .roadmap-detail { padding-left: 38px; }
 .recent-rain-section { padding-top: 12px; }
+
+
+/* V13 — compact, explainable flood-pressure contribution breakdown */
+.pressure-breakdown { display:grid; gap:9px; margin:12px 0; }
+.pressure-row { padding:9px 10px; border:1px solid #dbe7ec; border-radius:10px; background:#f8fbfc; }
+.pressure-row-head { display:flex; justify-content:space-between; gap:12px; align-items:center; font-size:.82rem; }
+.pressure-row-head strong { color:var(--navy); }
+.pressure-track { height:6px; margin:6px 0 5px; border-radius:999px; background:#e3ecef; overflow:hidden; }
+.pressure-track span { display:block; height:100%; border-radius:inherit; background:currentColor; color:var(--blue); }
+.pressure-row small { color:#62747c; line-height:1.3; display:block; }

@@ -179,14 +179,26 @@
 <div class="runoff-finding neutral" id="forecastFinding"><strong>FORECAST RAINFALL PRESSURE</strong><p>Waiting for forecast precipitation data.</p></div>
 <p class="data-note" id="forecastSource">Forecast source: Open-Meteo global weather forecast models. This is modelled forecast precipitation, not a NASA observation and not street-level rainfall.</p>
 </div></li>
-<li class="roadmap-item future roadmap-accordion-item" data-detail="detailSurface"><button aria-controls="detailSurface" aria-expanded="false" class="roadmap-toggle" type="button"><span class="roadmap-number">07</span><span class="roadmap-name">Surface water indicators</span><span aria-label="Planned" class="roadmap-state"></span></button><div class="roadmap-detail future-detail" id="detailSurface"><strong>Surface water indicators</strong><p>Planned layer: surface-water conditions that can strengthen or reduce the flood-pressure signal.</p></div></li>
-<li class="roadmap-item future roadmap-accordion-item" data-detail="detailRisk"><button aria-controls="detailRisk" aria-expanded="false" class="roadmap-toggle" type="button"><span class="roadmap-number">08</span><span class="roadmap-name">Explainable flood-risk assessment</span><span aria-label="Planned" class="roadmap-state"></span></button><div class="roadmap-detail future-detail" id="detailRisk"><strong>Explainable flood-risk assessment</strong><p>Final planned layer: combine terrain, soil, drainage, rainfall, surface water and forecast evidence into an explainable early-warning outlook.</p></div></li>
+<li class="roadmap-item pending roadmap-accordion-item" data-detail="detailIntegration" id="roadmapIntegration"><button aria-controls="detailIntegration" aria-expanded="false" class="roadmap-toggle" type="button"><span class="roadmap-number">07</span><span class="roadmap-name">Flood pressure integration</span><span aria-label="Waiting" class="roadmap-state"></span></button><div class="roadmap-detail integration-section" id="detailIntegration">
+<div class="section-heading"><div><div class="panel-label">HYPERFLOOD INTEGRATED INTELLIGENCE</div><h3>Flood pressure integration</h3></div><span class="soil-badge neutral" id="integrationBadge">WAITING</span></div>
+<p class="terrain-status" id="integrationStatus">Waiting for the active environmental layers to finish.</p>
+<div class="terrain-grid">
+<div class="terrain-metric"><span>Pressure index</span><strong id="pressureScore">—</strong></div>
+<div class="terrain-metric"><span>Pressure level</span><strong id="pressureLevel">—</strong></div>
+<div class="terrain-metric"><span>Evidence available</span><strong id="pressureEvidence">—</strong></div>
+<div class="terrain-metric"><span>Strongest signal</span><strong id="pressureDriver">—</strong></div>
+</div>
+<div class="pressure-breakdown" id="pressureBreakdown"></div>
+<div class="runoff-finding neutral" id="integrationFinding"><strong>WAITING FOR LAYERS</strong><p>HyperFlood will combine terrain, soil/runoff, river proximity, recent rainfall and forecast rainfall after those analyses finish.</p></div>
+<p class="data-note">HyperFlood prototype index. This is an explainable screening signal, not a calibrated flood probability, official warning or emergency alert. NASA historical trends are shown as long-term context and are not treated as short-term flood forcing.</p>
+</div></li>
+<li class="roadmap-item future roadmap-accordion-item" data-detail="detailRisk"><button aria-controls="detailRisk" aria-expanded="false" class="roadmap-toggle" type="button"><span class="roadmap-number">08</span><span class="roadmap-name">Explainable flood early-warning outlook</span><span aria-label="Planned" class="roadmap-state"></span></button><div class="roadmap-detail future-detail" id="detailRisk"><strong>Explainable flood early-warning outlook</strong><p>Final planned layer: translate the integrated pressure signal into separate 24-hour, 48-hour and 7-day outlooks.</p></div></li>
 </ul>
 </div>
 <div class="warning-card prototype-warning">
 <p class="panel-label">HYPERFLOOD STATUS</p>
-<h3>Terrain + soil + drainage + rainfall layers active</h3>
-<p>This is not yet a flood warning. HyperFlood now combines terrain, NASA trend/soil inputs and mapped river/drainage proximity. Recent NASA rainfall and forecast precipitation are now active. The final assessment will add surface-water evidence and combine all layers into an explainable outlook.</p>
+<h3>Integrated flood-pressure layer active</h3>
+<p>This is not yet an official flood warning. HyperFlood now integrates terrain, NASA soil inputs, mapped river/drainage proximity, recent NASA rainfall and forecast precipitation into an explainable prototype pressure index. NASA historical trends remain long-term Earth-system context. The final stage will translate this into 24h / 48h / 7-day outlooks.</p>
 </div>
 </aside>
 </div>
