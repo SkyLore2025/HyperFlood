@@ -167,15 +167,26 @@
 <div class="runoff-finding neutral" id="recentRainFinding"><strong>RECENT RAINFALL PRESSURE</strong><p>Waiting for recent precipitation data.</p></div>
 <p class="data-note" id="recentRainSource">Source: NASA POWER Daily API. Meteorological data are supplied at their native source resolution; this is not street-level rainfall.</p>
 </div></li>
-<li class="roadmap-item future roadmap-accordion-item" data-detail="detailForecast"><button aria-controls="detailForecast" aria-expanded="false" class="roadmap-toggle" type="button"><span class="roadmap-number">06</span><span class="roadmap-name">24h / 48h / 7-day precipitation forecast</span><span aria-label="Planned" class="roadmap-state"></span></button><div class="roadmap-detail future-detail" id="detailForecast"><strong>Precipitation forecast</strong><p>Planned layer: rainfall outlooks for the 24-hour, 48-hour and 7-day warning windows.</p></div></li>
+<li class="roadmap-item pending roadmap-accordion-item" data-detail="detailForecast" id="roadmapForecast"><button aria-controls="detailForecast" aria-expanded="false" class="roadmap-toggle" type="button"><span class="roadmap-number">06</span><span class="roadmap-name">24h / 48h / 7-day precipitation forecast</span><span aria-label="Waiting" class="roadmap-state"></span></button><div class="roadmap-detail forecast-section" id="detailForecast">
+<div class="section-heading"><div><div class="panel-label">FORECAST PRECIPITATION</div><h3>Rainfall outlook</h3></div><span class="soil-badge neutral" id="forecastBadge">LOADING</span></div>
+<p class="terrain-status" id="forecastStatus">Loading forecast precipitation…</p>
+<div class="soil-grid">
+<div class="terrain-metric"><span>Next 24 hours</span><strong id="forecast24h">—</strong></div>
+<div class="terrain-metric"><span>Next 48 hours</span><strong id="forecast48h">—</strong></div>
+<div class="terrain-metric"><span>Next 7 days</span><strong id="forecast7d">—</strong></div>
+<div class="terrain-metric"><span>Peak forecast hour</span><strong id="forecastPeak">—</strong></div>
+</div>
+<div class="runoff-finding neutral" id="forecastFinding"><strong>FORECAST RAINFALL PRESSURE</strong><p>Waiting for forecast precipitation data.</p></div>
+<p class="data-note" id="forecastSource">Forecast source: Open-Meteo global weather forecast models. This is modelled forecast precipitation, not a NASA observation and not street-level rainfall.</p>
+</div></li>
 <li class="roadmap-item future roadmap-accordion-item" data-detail="detailSurface"><button aria-controls="detailSurface" aria-expanded="false" class="roadmap-toggle" type="button"><span class="roadmap-number">07</span><span class="roadmap-name">Surface water indicators</span><span aria-label="Planned" class="roadmap-state"></span></button><div class="roadmap-detail future-detail" id="detailSurface"><strong>Surface water indicators</strong><p>Planned layer: surface-water conditions that can strengthen or reduce the flood-pressure signal.</p></div></li>
 <li class="roadmap-item future roadmap-accordion-item" data-detail="detailRisk"><button aria-controls="detailRisk" aria-expanded="false" class="roadmap-toggle" type="button"><span class="roadmap-number">08</span><span class="roadmap-name">Explainable flood-risk assessment</span><span aria-label="Planned" class="roadmap-state"></span></button><div class="roadmap-detail future-detail" id="detailRisk"><strong>Explainable flood-risk assessment</strong><p>Final planned layer: combine terrain, soil, drainage, rainfall, surface water and forecast evidence into an explainable early-warning outlook.</p></div></li>
 </ul>
 </div>
 <div class="warning-card prototype-warning">
 <p class="panel-label">HYPERFLOOD STATUS</p>
-<h3>Terrain + soil + drainage layers active</h3>
-<p>This is not yet a flood warning. HyperFlood now combines terrain, NASA trend/soil inputs and mapped river/drainage proximity. The final assessment will add recent rainfall, forecast and surface-water evidence.</p>
+<h3>Terrain + soil + drainage + rainfall layers active</h3>
+<p>This is not yet a flood warning. HyperFlood now combines terrain, NASA trend/soil inputs and mapped river/drainage proximity. Recent NASA rainfall and forecast precipitation are now active. The final assessment will add surface-water evidence and combine all layers into an explainable outlook.</p>
 </div>
 </aside>
 </div>

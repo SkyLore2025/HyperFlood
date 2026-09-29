@@ -1,12 +1,15 @@
-# HyperFlood V11
+# HyperFlood V12
 
-Stable V10 plus Layer 05 — Recent Precipitation.
+Stable V11 baseline plus Layer 06: 24h / 48h / 7-day forecast precipitation.
 
-V11 changes only:
-- NASA Historical Trends + Proxy moved to roadmap position 01.
-- Elevation & Terrain moved to position 02.
-- Roadmap rows made more compact so all eight headings fit more easily without scrolling.
-- Layer 05 now uses the NASA POWER Daily API for the latest available 1-day, 3-day and 7-day precipitation totals.
-- Existing terrain, historical trends, soil/runoff and rivers/drainage functionality is unchanged.
+## Active layers
+1. NASA Historical Trends
+2. Elevation & Terrain
+3. Soil Wetness + Runoff
+4. Rivers & Drainage
+5. Recent Precipitation
+6. Forecast Precipitation
 
-Recent rainfall is a NASA POWER meteorological point/grid product, not street-level rainfall. HyperFlood rainfall-pressure labels are prototype interpretations, not official flood warnings.
+Forecast precipitation is a supporting non-NASA layer retrieved from Open-Meteo's global weather forecast API. NASA historical/recent environmental layers remain clearly labelled separately.
+
+Deploy the full project to Vercel, including `api/forecast-rain.js`.

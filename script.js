@@ -481,7 +481,8 @@ const roadmapItems = {
   trends: document.getElementById("roadmapTrends"),
   soil: document.getElementById("roadmapSoil"),
   rivers: document.getElementById("roadmapRivers"),
-  recentRain: document.getElementById("roadmapRecentRain")
+  recentRain: document.getElementById("roadmapRecentRain"),
+  forecast: document.getElementById("roadmapForecast")
 };
 
 function setRoadmapState(key, state) {
@@ -504,6 +505,7 @@ function resetRoadmapForPoint() {
   setRoadmapState("soil", "loading");
   setRoadmapState("rivers", "loading");
   setRoadmapState("recentRain", "loading");
+  setRoadmapState("forecast", "loading");
 }
 
 // ==========================================================
@@ -1048,4 +1050,77 @@ const v11BaseUpdateAnalysisPoint = updateAnalysisPoint;
 updateAnalysisPoint = function(lat,lon,label){
   v11BaseUpdateAnalysisPoint(lat,lon,label);
   analyseRecentPrecipitation(lat,lon);
+};
+
+
+// ==========================================================
+// V12 FORECAST PRECIPITATION — supporting global forecast layer
+// Existing V11 analyses remain unchanged.
+// ==========================================================
+const forecastBadge = document.getElementById("forecastBadge");
+const forecastStatus = document.getElementById("forecastStatus");
+const forecast24h = document.getElementById("forecast24h");
+const forecast48h = document.getElementById("forecast48h");
+const forecast7d = document.getElementById("forecast7d");
+const forecastPeak = document.getElementById("forecastPeak");
+const forecastFinding = document.getElementById("forecastFinding");
+const forecastSource = document.getElementById("forecastSource");
+let forecastRequestId = 0;
+
+function renderForecastLoading(){
+  forecastBadge.className="soil-badge neutral"; forecastBadge.textContent="LOADING";
+  forecastStatus.textContent="Loading forecast precipitation…";
+  forecast24h.textContent=forecast48h.textContent=forecast7d.textContent=forecastPeak.textContent="…";
+  forecastFinding.className="runoff-finding neutral";
+  forecastFinding.querySelector("strong").textContent="FORECAST RAINFALL PRESSURE";
+  forecastFinding.querySelector("p").textContent="Waiting for forecast precipitation data.";
+}
+function forecastPressure(total24,total48,total7){
+  if(total24>=50 || total48>=80 || total7>=150) return {label:"VERY HIGH",cls:"high",text:"The forecast shows substantial precipitation accumulation. Combined with wet soil, runoff potential and nearby drainage constraints, this can sharply increase flood pressure."};
+  if(total24>=25 || total48>=50 || total7>=100) return {label:"HIGH",cls:"high",text:"A notable amount of precipitation is forecast. HyperFlood should interpret this together with recent rainfall, soil wetness, terrain and drainage."};
+  if(total24>=10 || total48>=25 || total7>=50) return {label:"MODERATE",cls:"moderate",text:"Meaningful precipitation is forecast, but local flood relevance depends on the other HyperFlood layers and rainfall intensity."};
+  return {label:"LOW",cls:"low",text:"Forecast precipitation accumulation is relatively low by this prototype threshold. Forecasts can change and localized rainfall may differ."};
+}
+function renderForecast(data){
+  const p=forecastPressure(data.total24h,data.total48h,data.total7d);
+  forecastBadge.className=`soil-badge ${p.cls}`; forecastBadge.textContent=p.label;
+  forecastStatus.textContent=`Forecast generated from the latest available ${data.modelLabel || "global weather model"} data.`;
+  forecast24h.textContent=`${data.total24h.toFixed(1)} mm`;
+  forecast48h.textContent=`${data.total48h.toFixed(1)} mm`;
+  forecast7d.textContent=`${data.total7d.toFixed(1)} mm`;
+  forecastPeak.textContent=`${data.peakHourly.toFixed(1)} mm/h`;
+  forecastFinding.className=`runoff-finding ${p.cls}`;
+  forecastFinding.querySelector("strong").textContent=`${p.label} FORECAST RAINFALL PRESSURE`;
+  forecastFinding.querySelector("p").textContent=p.text;
+  forecastSource.textContent=`Forecast source: ${data.source}. ${data.modelLabel || "Global forecast model"}; ${data.hourCount} forecast hours analysed. This is modelled forecast precipitation, not a NASA observation or street-level measurement. Pressure labels are HyperFlood prototype interpretations.`;
+}
+function renderForecastError(error){
+  console.error("Forecast precipitation error:",error);
+  forecastBadge.className="soil-badge neutral"; forecastBadge.textContent="UNAVAILABLE";
+  forecastStatus.textContent="Forecast precipitation could not be loaded for this point.";
+  forecast24h.textContent=forecast48h.textContent=forecast7d.textContent=forecastPeak.textContent="—";
+  forecastFinding.className="runoff-finding neutral";
+  forecastFinding.querySelector("strong").textContent="DATA UNAVAILABLE";
+  forecastFinding.querySelector("p").textContent="The other HyperFlood analyses remain available. Try this point again later.";
+}
+async function analyseForecastPrecipitation(lat,lon){
+  const requestId=++forecastRequestId; renderForecastLoading(); setRoadmapState("forecast","loading");
+  try{
+    const url=new URL("/api/forecast-rain",window.location.origin);
+    url.searchParams.set("lat",Number(lat).toFixed(5)); url.searchParams.set("lon",Number(lon).toFixed(5));
+    const response=await fetch(url,{headers:{Accept:"application/json"},cache:"no-store"});
+    const data=await response.json();
+    if(!response.ok || !data?.ok) throw new Error(data?.error || "Forecast precipitation service unavailable");
+    if(requestId!==forecastRequestId) return;
+    renderForecast(data); setRoadmapState("forecast","done");
+  }catch(error){
+    if(requestId!==forecastRequestId) return;
+    renderForecastError(error); setRoadmapState("forecast","error");
+  }
+}
+
+const v12BaseUpdateAnalysisPoint = updateAnalysisPoint;
+updateAnalysisPoint = function(lat,lon,label){
+  v12BaseUpdateAnalysisPoint(lat,lon,label);
+  analyseForecastPrecipitation(lat,lon);
 };
