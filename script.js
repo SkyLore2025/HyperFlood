@@ -483,7 +483,8 @@ const roadmapItems = {
   rivers: document.getElementById("roadmapRivers"),
   recentRain: document.getElementById("roadmapRecentRain"),
   forecast: document.getElementById("roadmapForecast"),
-  integration: document.getElementById("roadmapIntegration")
+  integration: document.getElementById("roadmapIntegration"),
+  risk: document.getElementById("roadmapRisk")
 };
 
 function setRoadmapState(key, state) {
@@ -509,46 +510,42 @@ function resetRoadmapForPoint() {
   setRoadmapState("recentRain", "loading");
   setRoadmapState("forecast", "loading");
   setRoadmapState("integration", "loading");
+  setRoadmapState("risk", "loading");
 }
 
 // ==========================================================
-// v5 FIXED EARLY-WARNING PLACEHOLDER BAR
-// The final warning engine will replace this placeholder text.
+// v5 FIXED EARLY-WARNING BAR — final V14 engine hooks
 // ==========================================================
 const warningToggleButtons = document.querySelectorAll(".warning-toggle");
 const warningWindowTitle = document.getElementById("warningWindowTitle");
 const warningStatus = document.getElementById("warningStatus");
-
-warningToggleButtons.forEach((button) => {
-  button.addEventListener("click", () => {
-    warningToggleButtons.forEach((item) => item.classList.remove("active"));
-    button.classList.add("active");
-
-    const selectedWindow = button.dataset.window;
-    warningWindowTitle.textContent = `${selectedWindow} outlook`;
-    warningStatus.textContent = `${selectedWindow} flood early-warning output will appear here when the final rainfall, drainage, soil/runoff and surface-water layers are connected.`;
-  });
-});
-
-
-// Tiny blink on/off control. The bar starts blinking by default.
+const warningLevel = document.getElementById("warningLevel");
 const warningBar = document.getElementById("warningBar");
 const blinkToggle = document.getElementById("blinkToggle");
-if (warningBar && blinkToggle) {
-  blinkToggle.addEventListener("change", () => {
-    warningBar.classList.toggle("blink-enabled", blinkToggle.checked);
-  });
-}
+let selectedWarningWindow = "24 hours";
 
-// Reserved for the final flood-warning engine.
-// Later call setWarningSeverity("normal" | "low" | "moderate" | "high" | "severe")
-// and the complete outlook bar will change colour automatically.
 function setWarningSeverity(level = "normal") {
   if (!warningBar) return;
   const levels = ["normal", "low", "moderate", "high", "severe"];
   const safeLevel = levels.includes(level) ? level : "normal";
   levels.forEach(item => warningBar.classList.remove(`severity-${item}`));
   warningBar.classList.add(`severity-${safeLevel}`);
+}
+
+warningToggleButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    warningToggleButtons.forEach((item) => item.classList.remove("active"));
+    button.classList.add("active");
+    selectedWarningWindow = button.dataset.window;
+    warningWindowTitle.textContent = `${selectedWarningWindow} outlook`;
+    renderSelectedWarningWindow();
+  });
+});
+
+if (warningBar && blinkToggle) {
+  blinkToggle.addEventListener("change", () => {
+    warningBar.classList.toggle("blink-enabled", blinkToggle.checked);
+  });
 }
 
 // ==========================================================
@@ -564,6 +561,8 @@ const trendSlope = document.getElementById("trendSlope");
 const trendChange = document.getElementById("trendChange");
 const trendSignificance = document.getElementById("trendSignificance");
 const trendFinding = document.getElementById("trendFinding");
+const baselineCard = document.getElementById("baselineCard");
+const baselineText = document.getElementById("baselineText");
 let trendVariable = "rain";
 let trendData = null;
 let trendRequestId = 0;
@@ -691,6 +690,12 @@ function renderTrend() {
   const dir=fit.slope>0?"increasing":"decreasing";
   trendFinding.querySelector("strong").textContent=`${dir.toUpperCase()} ${variable.toUpperCase()}`;
   trendFinding.querySelector("p").textContent=`NASA POWER data show a ${dir} linear trend of ${Math.abs(fit.slope).toFixed(key==="rain"?1:3)} ${unit}. Over this period, the fitted change is ${Math.abs(fit.total).toFixed(key==="rain"?0:2)} ${changeUnit}. This trend is ${fit.p<0.05?"statistically significant":"not statistically significant"} at the p < 0.05 threshold.`;
+  if (baselineCard && baselineText) {
+    baselineCard.className = `baseline-card ${fit.slope > 0 ? "up" : fit.slope < 0 ? "down" : "neutral"}`;
+    baselineText.textContent = key === "rain"
+      ? `Long-term precipitation is ${dir}. This is Earth-system context only; HyperFlood does not add the trend directly to today's flood-pressure score.`
+      : `Long-term temperature is ${dir}. This changes the environmental baseline but is not treated as a direct short-term flood trigger.`;
+  }
   drawTrendChart(trendData,key,fit);
 }
 
@@ -1240,4 +1245,172 @@ updateAnalysisPoint = function(lat,lon,label){
   renderIntegrationWaiting(); setRoadmapState("integration","loading");
   v13BaseUpdateAnalysisPoint(lat,lon,label);
   scheduleFloodPressureIntegration();
+};
+
+
+// ==========================================================
+// V14 — FINAL FLOOD EARLY-WARNING OUTLOOK
+// Past → Present → Future → Action
+// The warning is a transparent prototype decision-support signal.
+// ==========================================================
+const warningDetailStatus = document.getElementById("warningDetailStatus");
+const warningBadge = document.getElementById("warningBadge");
+const warningFinding = document.getElementById("warningFinding");
+const warningOutlook = {
+  "24 hours": { level: document.getElementById("detail24Level"), reason: document.getElementById("detail24Reason"), card: document.querySelector('[data-outlook-card="24"]') },
+  "48 hours": { level: document.getElementById("detail48Level"), reason: document.getElementById("detail48Reason"), card: document.querySelector('[data-outlook-card="48"]') },
+  "7 days": { level: document.getElementById("detail7Level"), reason: document.getElementById("detail7Reason"), card: document.querySelector('[data-outlook-card="7"]') }
+};
+let finalOutlook = null;
+let finalOutlookTimer = null;
+
+function outlookLevel(score) {
+  if (score >= 80) return { label: "SEVERE", cls: "severe" };
+  if (score >= 60) return { label: "HIGH", cls: "high" };
+  if (score >= 40) return { label: "MODERATE", cls: "moderate" };
+  if (score >= 20) return { label: "LOW", cls: "low" };
+  return { label: "NORMAL", cls: "normal" };
+}
+
+function metricNumber(el) {
+  if (!el) return null;
+  const m = String(el.textContent || "").replace(/,/g, "").match(/-?\d+(?:\.\d+)?/);
+  return m ? Number(m[0]) : null;
+}
+
+function buildWarningOutlook() {
+  if (!warningDetailStatus) return;
+  const ready = ["terrain", "soil", "rivers", "recentRain", "forecast"].filter(k => roadmapItems[k]?.classList.contains("done"));
+  if (ready.length < 3 || !roadmapItems.integration?.classList.contains("done")) {
+    finalOutlook = null;
+    setRoadmapState("risk", "loading");
+    warningBadge.className = "soil-badge neutral";
+    warningBadge.textContent = "ANALYSING";
+    warningDetailStatus.textContent = "Waiting for enough current and forecast evidence to build the final outlook.";
+    warningFinding.className = "runoff-finding neutral";
+    warningFinding.querySelector("strong").textContent = "WAITING FOR FLOOD OUTLOOK";
+    warningFinding.querySelector("p").textContent = "HyperFlood needs at least three usable short-term evidence layers before publishing the prototype outlook.";
+    warningLevel.textContent = "ANALYSING";
+    warningStatus.textContent = "Waiting for the integrated flood-pressure layers to complete.";
+    setWarningSeverity("normal");
+    return;
+  }
+
+  const baseParts = [];
+  let base = 0;
+  // Present-condition component: terrain (15), soil/runoff (25), waterways (15), recent rain (20) = 75.
+  const pos = String(positionClass?.textContent || "");
+  const slope = metricNumber(slopeValue);
+  let terrainPts = 0;
+  if (/low-lying/i.test(pos)) terrainPts += 10; else if (/near local average/i.test(pos)) terrainPts += 4;
+  if (slope !== null && slope < 2) terrainPts += 5; else if (slope !== null && slope < 5) terrainPts += 2;
+  if (roadmapItems.terrain?.classList.contains("done")) {
+    base += Math.min(15, terrainPts); baseParts.push({label:"terrain", points:Math.min(15,terrainPts), max:15});
+  }
+
+  if (roadmapItems.soil?.classList.contains("done")) {
+    const r = String(runoffPotential?.textContent || "").toUpperCase();
+    const pts = r.includes("HIGH") ? 25 : r.includes("MODERATE") ? 14 : 5;
+    base += pts; baseParts.push({label:"soil/runoff", points:pts, max:25});
+  }
+
+  if (roadmapItems.rivers?.classList.contains("done")) {
+    const d = metricNumber(waterwayDistance); const raw = String(waterwayDistance?.textContent || "");
+    const metres = d === null ? null : /km/i.test(raw) ? d * 1000 : d;
+    let pts = 0;
+    if (metres !== null) pts = metres <= 250 ? 15 : metres <= 750 ? 10 : metres <= 2000 ? 5 : 1;
+    base += pts; baseParts.push({label:"waterway proximity", points:pts, max:15});
+  }
+
+  if (roadmapItems.recentRain?.classList.contains("done")) {
+    const r7 = metricNumber(rain7d) ?? 0;
+    const pts = Math.min(20, Math.max(0, r7) / 100 * 20);
+    base += pts; baseParts.push({label:"recent rainfall", points:pts, max:20});
+  }
+
+  const forecast24 = metricNumber(forecast24h) ?? 0;
+  const forecast48 = metricNumber(forecast48h) ?? 0;
+  const forecast7 = metricNumber(forecast7d) ?? 0;
+  const windowForecast = {
+    "24 hours": { value: forecast24, max: 50 },
+    "48 hours": { value: forecast48, max: 80 },
+    "7 days": { value: forecast7, max: 150 }
+  };
+
+  // Normalize present conditions to 0–75, then add forecast pressure as 0–25.
+  // This deliberately keeps historical trends contextual rather than turning them into arbitrary risk points.
+  const presentScore = baseParts.length ? base / baseParts.reduce((sum,p)=>sum+p.max,0) * 75 : 0;
+  const result = {};
+  for (const [window, f] of Object.entries(windowForecast)) {
+    const forecastPoints = Math.min(25, Math.max(0, f.value) / f.max * 25);
+    const score = Math.round(Math.min(100, presentScore + forecastPoints));
+    const level = outlookLevel(score);
+    const topPresent = [...baseParts].sort((a,b)=>(b.points/b.max)-(a.points/a.max)).slice(0,2).map(p=>p.label);
+    let reason = topPresent.length ? `Current drivers: ${topPresent.join(" + ")}.` : "Current environmental evidence is limited.";
+    if (forecastPoints >= 20) reason += ` Forecast rainfall adds strong pressure (${f.value.toFixed(1)} mm).`;
+    else if (forecastPoints >= 10) reason += ` Forecast rainfall adds moderate pressure (${f.value.toFixed(1)} mm).`;
+    else reason += ` Forecast rainfall adds limited pressure (${f.value.toFixed(1)} mm).`;
+    result[window] = {score, level, reason, forecast:f.value};
+  }
+  finalOutlook = result;
+  const selected = result[selectedWarningWindow] || result["24 hours"];
+  warningBadge.className = `soil-badge ${selected.level.cls}`;
+  warningBadge.textContent = selected.level.label;
+  warningDetailStatus.textContent = `Prototype outlook calculated from ${ready.length} active short-term evidence layers. Historical NASA trends remain long-term context.`;
+  warningFinding.className = `runoff-finding ${selected.level.cls}`;
+  warningFinding.querySelector("strong").textContent = `${selected.level.label} FLOOD EARLY-WARNING OUTLOOK`;
+  warningFinding.querySelector("p").textContent = `${selected.reason} This is a transparent screening signal, not a probability of flooding or an official warning.`;
+
+  for (const [window, ui] of Object.entries(warningOutlook)) {
+    const item = result[window];
+    if (!item) continue;
+    ui.level.textContent = item.level.label;
+    ui.reason.textContent = `Score ${item.score}/100 · ${item.reason}`;
+    ui.card.className = `outlook-card ${item.level.cls}${window === selectedWarningWindow ? " active" : ""}`;
+  }
+
+  warningLevel.textContent = selected.level.label;
+  warningStatus.textContent = `${selected.reason} Prototype decision-support outlook.`;
+  setWarningSeverity(selected.level.cls);
+  setRoadmapState("risk", "done");
+}
+
+function renderSelectedWarningWindow() {
+  if (!finalOutlook) { buildWarningOutlook(); return; }
+  const selected = finalOutlook[selectedWarningWindow] || finalOutlook["24 hours"];
+  warningWindowTitle.textContent = `${selectedWarningWindow} outlook`;
+  warningLevel.textContent = selected.level.label;
+  warningStatus.textContent = `${selected.reason} Prototype decision-support outlook.`;
+  setWarningSeverity(selected.level.cls);
+  Object.entries(warningOutlook).forEach(([window, ui]) => {
+    ui.card.classList.toggle("active", window === selectedWarningWindow);
+  });
+  warningBadge.className = `soil-badge ${selected.level.cls}`;
+  warningBadge.textContent = selected.level.label;
+  warningFinding.className = `runoff-finding ${selected.level.cls}`;
+  warningFinding.querySelector("strong").textContent = `${selected.level.label} FLOOD EARLY-WARNING OUTLOOK`;
+  warningFinding.querySelector("p").textContent = `${selected.reason} This is a transparent screening signal, not a probability of flooding or an official warning.`;
+}
+
+function scheduleFinalOutlook() {
+  clearTimeout(finalOutlookTimer);
+  finalOutlookTimer = setTimeout(buildWarningOutlook, 180);
+}
+
+const v14BaseUpdateAnalysisPoint = updateAnalysisPoint;
+updateAnalysisPoint = function(lat, lon, label) {
+  finalOutlook = null;
+  setRoadmapState("risk", "loading");
+  warningLevel.textContent = "ANALYSING";
+  warningStatus.textContent = "Analysing current environmental conditions and forecast rainfall…";
+  setWarningSeverity("normal");
+  v14BaseUpdateAnalysisPoint(lat, lon, label);
+  scheduleFinalOutlook();
+};
+
+// Recalculate whenever one of the upstream layers changes state.
+const originalSetRoadmapState = setRoadmapState;
+setRoadmapState = function(key, state) {
+  originalSetRoadmapState(key, state);
+  if (["terrain","soil","rivers","recentRain","forecast","integration"].includes(key)) scheduleFinalOutlook();
 };

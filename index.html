@@ -60,7 +60,7 @@
 <p class="panel-label">ANALYSIS ROADMAP</p>
 <ul aria-label="HyperFlood analysis roadmap" class="layer-list analysis-roadmap">
 <li class="roadmap-item pending roadmap-accordion-item" data-detail="detailTrends" id="roadmapTrends">
-<button aria-controls="detailTrends" aria-expanded="false" class="roadmap-toggle" type="button"><span class="roadmap-number">01</span><span class="roadmap-name">NASA historical trends + proxy</span><span aria-label="Waiting" class="roadmap-state"></span></button>
+<button aria-controls="detailTrends" aria-expanded="false" class="roadmap-toggle" type="button"><span class="roadmap-number">01</span><span class="roadmap-name">NASA historical trends</span><span aria-label="Waiting" class="roadmap-state"></span></button>
 <div class="roadmap-detail trend-section" id="detailTrends">
 <div class="trend-heading">
 <div>
@@ -90,6 +90,10 @@
 <div class="trend-finding neutral" id="trendFinding">
 <strong>WAITING FOR LOCATION</strong>
 <p>HyperFlood will answer: what is changing, where, how much, and whether the detected linear trend is statistically significant.</p>
+</div>
+<div class="baseline-card neutral" id="baselineCard">
+<strong>CHANGING BASELINE</strong>
+<p id="baselineText">Historical NASA trends will provide long-term Earth-system context for the current flood-pressure analysis.</p>
 </div>
 <p class="data-note">Historical source: NASA POWER. Precipitation is derived from GPM IMERG; temperature is derived from MERRA-2. Trend significance uses a two-sided linear-regression test (p &lt; 0.05).</p>
 </div>
@@ -192,23 +196,34 @@
 <div class="runoff-finding neutral" id="integrationFinding"><strong>WAITING FOR LAYERS</strong><p>HyperFlood will combine terrain, soil/runoff, river proximity, recent rainfall and forecast rainfall after those analyses finish.</p></div>
 <p class="data-note">HyperFlood prototype index. This is an explainable screening signal, not a calibrated flood probability, official warning or emergency alert. NASA historical trends are shown as long-term context and are not treated as short-term flood forcing.</p>
 </div></li>
-<li class="roadmap-item future roadmap-accordion-item" data-detail="detailRisk"><button aria-controls="detailRisk" aria-expanded="false" class="roadmap-toggle" type="button"><span class="roadmap-number">08</span><span class="roadmap-name">Explainable flood early-warning outlook</span><span aria-label="Planned" class="roadmap-state"></span></button><div class="roadmap-detail future-detail" id="detailRisk"><strong>Explainable flood early-warning outlook</strong><p>Final planned layer: translate the integrated pressure signal into separate 24-hour, 48-hour and 7-day outlooks.</p></div></li>
+<li class="roadmap-item pending roadmap-accordion-item" data-detail="detailRisk" id="roadmapRisk"><button aria-controls="detailRisk" aria-expanded="false" class="roadmap-toggle" type="button"><span class="roadmap-number">08</span><span class="roadmap-name">Flood early-warning outlook</span><span aria-label="Waiting" class="roadmap-state"></span></button><div class="roadmap-detail warning-detail" id="detailRisk">
+<div class="section-heading"><div><div class="panel-label">FINAL HYPERFLOOD OUTLOOK</div><h3>Explainable early warning</h3></div><span class="soil-badge neutral" id="warningBadge">WAITING</span></div>
+<p class="terrain-status" id="warningDetailStatus">The final outlook will translate current pressure and forecast rainfall into separate 24-hour, 48-hour and 7-day signals.</p>
+<div class="outlook-grid">
+<div class="outlook-card active" data-outlook-card="24"><span>24 HOURS</span><strong id="detail24Level">—</strong><small id="detail24Reason">Waiting for evidence.</small></div>
+<div class="outlook-card" data-outlook-card="48"><span>48 HOURS</span><strong id="detail48Level">—</strong><small id="detail48Reason">Waiting for evidence.</small></div>
+<div class="outlook-card" data-outlook-card="7"><span>7 DAYS</span><strong id="detail7Level">—</strong><small id="detail7Reason">Waiting for evidence.</small></div>
+</div>
+<div class="runoff-finding neutral" id="warningFinding"><strong>WAITING FOR FLOOD OUTLOOK</strong><p>HyperFlood will explain which environmental signals are driving the selected outlook.</p></div>
+<p class="data-note">Prototype decision-support indicator. It is not a calibrated flood probability, official government warning or emergency alert.</p>
+</div></li>
 </ul>
 </div>
 <div class="warning-card prototype-warning">
 <p class="panel-label">HYPERFLOOD STATUS</p>
-<h3>Integrated flood-pressure layer active</h3>
-<p>This is not yet an official flood warning. HyperFlood now integrates terrain, NASA soil inputs, mapped river/drainage proximity, recent NASA rainfall and forecast precipitation into an explainable prototype pressure index. NASA historical trends remain long-term Earth-system context. The final stage will translate this into 24h / 48h / 7-day outlooks.</p>
+<h3>HyperFlood intelligence active</h3>
+<p>HyperFlood investigates the <strong>past</strong> with NASA historical trends, understands the <strong>present</strong> through terrain, soil, waterways and recent rainfall, looks toward the <strong>future</strong> with forecast precipitation, and connects those signals into an explainable prototype flood outlook.</p>
 </div>
 </aside>
 </div>
-<section aria-label="Flood early warning placeholder" class="warning-bar severity-normal blink-enabled" id="warningBar">
+<section aria-label="Flood early warning outlook" class="warning-bar severity-normal blink-enabled" id="warningBar">
 <div class="warning-bar-heading">
 <p class="panel-label">FLOOD EARLY WARNING</p>
 <strong id="warningWindowTitle">24-hour outlook</strong>
 </div>
 <div class="warning-placeholder">
-<span id="warningStatus">Early-warning data will appear here in the final HyperFlood stage.</span>
+<strong id="warningLevel">ANALYSING</strong>
+<span id="warningStatus">Waiting for the integrated flood-pressure layers to complete.</span>
 </div>
 <div class="warning-controls">
 <div aria-label="Forecast window" class="warning-toggles" role="group">

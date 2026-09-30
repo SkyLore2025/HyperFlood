@@ -470,3 +470,31 @@ body { overflow: hidden; }
 .pressure-track { height:6px; margin:6px 0 5px; border-radius:999px; background:#e3ecef; overflow:hidden; }
 .pressure-track span { display:block; height:100%; border-radius:inherit; background:currentColor; color:var(--blue); }
 .pressure-row small { color:#62747c; line-height:1.3; display:block; }
+
+/* ==========================================================
+   V14 — changing baseline + final early-warning outlook
+   ========================================================== */
+.baseline-card {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border: 1px solid #dce8ed;
+  border-radius: 12px;
+  background: #f5f9fb;
+}
+.baseline-card strong { display:block; font-size:10px; letter-spacing:.08em; }
+.baseline-card p { margin:4px 0 0; font-size:11px; line-height:1.45; color:#5d707b; }
+.baseline-card.up { background:#eef8f2; border-color:#c6e3d0; }
+.baseline-card.down { background:#f8f5ee; border-color:#e8dcc0; }
+.baseline-card.neutral { background:#f5f9fb; }
+.warning-detail { padding-bottom: 2px; }
+.outlook-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:7px; margin-top:10px; }
+.outlook-card { min-width:0; padding:9px; border:1px solid #dce8ed; border-radius:12px; background:#f7fafb; }
+.outlook-card.active { box-shadow:0 0 0 2px rgba(39,183,217,.18); }
+.outlook-card span { display:block; font-size:9px; font-weight:850; letter-spacing:.08em; color:#6d808b; }
+.outlook-card strong { display:block; margin-top:4px; font-size:15px; }
+.outlook-card small { display:block; margin-top:4px; font-size:9px; line-height:1.35; color:#647782; }
+.outlook-card.low { background:#f1faf3; border-color:#c9e5cf; }
+.outlook-card.moderate { background:#fff9df; border-color:#eadb8c; }
+.outlook-card.high { background:#fff0df; border-color:#edc38e; }
+.outlook-card.severe { background:#ffe8e8; border-color:#e8aaaa; }
+@media (max-width:620px) { .outlook-grid { grid-template-columns:1fr; } }
