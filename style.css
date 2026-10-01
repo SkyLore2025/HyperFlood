@@ -542,3 +542,14 @@ body { overflow: hidden; }
   .landing-journey .journey-step { flex-basis:38%; }
   .landing-journey > i { display:none; }
 }
+
+/* V16 — historical seasonal baseline. This is contextual only and does not alter the flood score. */
+.historical-baseline-card { margin-top:12px; padding:12px; border:1px solid #cfe2dc; border-radius:13px; background:linear-gradient(135deg,#f7fbef,#f3f9fc); }
+.baseline-period-row { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:10px; padding:8px 10px; border:1px solid #dce9e5; border-radius:10px; background:rgba(255,255,255,.8); color:#526875; font-size:10px; }
+.baseline-period-row strong { color:#071827; font-size:12px; }
+.historical-baseline-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px; }
+.historical-baseline-grid > div { min-width:0; padding:9px; border:1px solid #dce9e5; border-radius:10px; background:rgba(255,255,255,.8); }
+.historical-baseline-grid small { display:block; color:#6b7b88; font-size:9px; font-weight:850; letter-spacing:.04em; line-height:1.25; }
+.historical-baseline-grid strong { display:block; margin-top:5px; font-size:12px; line-height:1.3; overflow-wrap:anywhere; }
+.historical-baseline-card .historical-context-note { margin-top:9px; padding-top:8px; border-top:1px solid #dce9e5; font-size:10px; line-height:1.45; }
+@media (max-width:620px) { .historical-baseline-grid { grid-template-columns:1fr; } }
