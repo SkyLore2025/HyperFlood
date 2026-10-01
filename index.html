@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>HyperFlood V14 | Hyperlocal Flood Intelligence</title>
+<title>HyperFlood V15 | Earth-System Trends to Flood Outlook</title>
 <link href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" rel="stylesheet"/>
 <link href="style.css" rel="stylesheet"/>
 </head>
@@ -15,7 +15,13 @@
 <div class="brand-mark">🌧️</div>
 <p class="eyebrow">GLOBAL FLOOD INTELLIGENCE</p>
 <h1>HyperFlood</h1>
-<p class="tagline">Explore flood risk at the places that matter to you.</p>
+<p class="tagline">From long-term Earth-system trends to hyperlocal flood outlooks.</p>
+<div class="journey-strip landing-journey" aria-label="HyperFlood process: past, present, future and action">
+  <div class="journey-step past"><span>🌍 PAST</span><strong>NASA trends</strong><small>Precipitation + temperature</small></div><i aria-hidden="true">→</i>
+  <div class="journey-step present"><span>📍 PRESENT</span><strong>Local conditions</strong><small>Terrain, soil, waterways, rain</small></div><i aria-hidden="true">→</i>
+  <div class="journey-step future"><span>🌧️ FUTURE</span><strong>Rainfall forecast</strong><small>24h · 48h · 7 days</small></div><i aria-hidden="true">→</i>
+  <div class="journey-step action"><span>⚠️ ACTION</span><strong>Explainable outlook</strong><small>Evidence-led decision support</small></div>
+</div>
 <form class="search-card" id="locationForm">
 <label for="locationInput">Search for a city, town, village or neighbourhood</label>
 <div class="search-row">
@@ -26,8 +32,8 @@
 <div aria-live="polite" class="results" id="results"></div>
 </form>
 <div class="prototype-note">
-<strong>Prototype v10</strong>
-<span>Global map + Terrain + NASA Trends + Soil/Runoff + Rivers &amp; Drainage Intelligence</span>
+<strong>Prototype v15</strong>
+<span>NASA historical trends connected to present conditions, forecast rainfall and an explainable flood outlook</span>
 </div>
 </div>
 </section>
@@ -46,6 +52,12 @@
 </div>
 <button class="secondary-button" id="backButton" type="button">← Home</button>
 </header>
+<div class="journey-strip map-journey" aria-label="HyperFlood analysis pathway">
+  <div class="journey-step past"><span>01 · PAST</span><strong>NASA trends</strong></div><i aria-hidden="true">→</i>
+  <div class="journey-step present"><span>02 · PRESENT</span><strong>Local conditions</strong></div><i aria-hidden="true">→</i>
+  <div class="journey-step future"><span>03 · FUTURE</span><strong>Rain forecast</strong></div><i aria-hidden="true">→</i>
+  <div class="journey-step action"><span>04 · ACTION</span><strong>Flood outlook</strong></div>
+</div>
 <div class="map-layout">
 <section aria-label="Interactive flood intelligence map" class="map-pane">
 <div class="map" id="map"></div>
@@ -56,9 +68,19 @@
 <h3 id="selectedPlaceLabel">—</h3>
 <p class="coordinates" id="coordinates">—</p>
 </div>
+<div class="baseline-spotlight" id="baselineSpotlight">
+  <div class="baseline-spotlight-heading"><span>🌍</span><div><p class="panel-label">LONG-TERM EARTH-SYSTEM BASELINE</p><strong>What has been changing here?</strong></div></div>
+  <div class="baseline-mini-grid">
+    <div><small>PRECIPITATION</small><strong id="baselineRainSummary">Awaiting NASA data</strong></div>
+    <div><small>TEMPERATURE</small><strong id="baselineTempSummary">Awaiting NASA data</strong></div>
+  </div>
+  <p id="baselinePeriodSummary">Selected historical period: 25 years · NASA POWER</p>
+  <small class="baseline-spotlight-note">Long-term context informs interpretation; it is not added directly to the short-term flood-pressure score.</small>
+</div>
 <div class="panel-section roadmap-section">
-<p class="panel-label">ANALYSIS ROADMAP</p>
+<p class="panel-label">ANALYSIS ROADMAP · PAST → PRESENT → FUTURE → ACTION</p>
 <ul aria-label="HyperFlood analysis roadmap" class="layer-list analysis-roadmap">
+<li class="roadmap-stage"><span>🌍 UNDERSTAND THE PLACE · LONG-TERM HISTORY</span></li>
 <li class="roadmap-item pending roadmap-accordion-item" data-detail="detailTrends" id="roadmapTrends">
 <button aria-controls="detailTrends" aria-expanded="false" class="roadmap-toggle" type="button"><span class="roadmap-number">01</span><span class="roadmap-name">NASA historical trends</span><span aria-label="Waiting" class="roadmap-state"></span></button>
 <div class="roadmap-detail trend-section" id="detailTrends">
@@ -97,7 +119,7 @@
 </div>
 <p class="data-note">Historical source: NASA POWER. Precipitation is derived from GPM IMERG; temperature is derived from MERRA-2. Trend significance uses a two-sided linear-regression test (p &lt; 0.05).</p>
 </div>
-</li><li class="roadmap-item pending roadmap-accordion-item" data-detail="detailTerrain" id="roadmapTerrain">
+</li><li class="roadmap-stage"><span>📍 UNDERSTAND TODAY · CURRENT CONDITIONS</span></li><li class="roadmap-item pending roadmap-accordion-item" data-detail="detailTerrain" id="roadmapTerrain">
 <button aria-controls="detailTerrain" aria-expanded="false" class="roadmap-toggle" type="button"><span class="roadmap-number">02</span><span class="roadmap-name">Elevation &amp; terrain</span><span aria-label="Waiting" class="roadmap-state"></span></button>
 <div class="roadmap-detail terrain-section" id="detailTerrain">
 <p class="panel-label">ELEVATION &amp; TERRAIN INTELLIGENCE</p>
@@ -171,7 +193,7 @@
 <div class="runoff-finding neutral" id="recentRainFinding"><strong>RECENT RAINFALL PRESSURE</strong><p>Waiting for recent precipitation data.</p></div>
 <p class="data-note" id="recentRainSource">Source: NASA POWER Daily API. Meteorological data are supplied at their native source resolution; this is not street-level rainfall.</p>
 </div></li>
-<li class="roadmap-item pending roadmap-accordion-item" data-detail="detailForecast" id="roadmapForecast"><button aria-controls="detailForecast" aria-expanded="false" class="roadmap-toggle" type="button"><span class="roadmap-number">06</span><span class="roadmap-name">24h / 48h / 7-day precipitation forecast</span><span aria-label="Waiting" class="roadmap-state"></span></button><div class="roadmap-detail forecast-section" id="detailForecast">
+<li class="roadmap-stage"><span>🌧️ LOOK AHEAD · FORECAST CONDITIONS</span></li><li class="roadmap-item pending roadmap-accordion-item" data-detail="detailForecast" id="roadmapForecast"><button aria-controls="detailForecast" aria-expanded="false" class="roadmap-toggle" type="button"><span class="roadmap-number">06</span><span class="roadmap-name">24h / 48h / 7-day precipitation forecast</span><span aria-label="Waiting" class="roadmap-state"></span></button><div class="roadmap-detail forecast-section" id="detailForecast">
 <div class="section-heading"><div><div class="panel-label">FORECAST PRECIPITATION</div><h3>Rainfall outlook</h3></div><span class="soil-badge neutral" id="forecastBadge">LOADING</span></div>
 <p class="terrain-status" id="forecastStatus">Loading forecast precipitation…</p>
 <div class="soil-grid">
@@ -183,7 +205,7 @@
 <div class="runoff-finding neutral" id="forecastFinding"><strong>FORECAST RAINFALL PRESSURE</strong><p>Waiting for forecast precipitation data.</p></div>
 <p class="data-note" id="forecastSource">Forecast source: Open-Meteo global weather forecast models. This is modelled forecast precipitation, not a NASA observation and not street-level rainfall.</p>
 </div></li>
-<li class="roadmap-item pending roadmap-accordion-item" data-detail="detailIntegration" id="roadmapIntegration"><button aria-controls="detailIntegration" aria-expanded="false" class="roadmap-toggle" type="button"><span class="roadmap-number">07</span><span class="roadmap-name">Flood pressure integration</span><span aria-label="Waiting" class="roadmap-state"></span></button><div class="roadmap-detail integration-section" id="detailIntegration">
+<li class="roadmap-stage"><span>⚠️ MAKE SENSE OF IT · INTEGRATION &amp; OUTLOOK</span></li><li class="roadmap-item pending roadmap-accordion-item" data-detail="detailIntegration" id="roadmapIntegration"><button aria-controls="detailIntegration" aria-expanded="false" class="roadmap-toggle" type="button"><span class="roadmap-number">07</span><span class="roadmap-name">Flood pressure integration</span><span aria-label="Waiting" class="roadmap-state"></span></button><div class="roadmap-detail integration-section" id="detailIntegration">
 <div class="section-heading"><div><div class="panel-label">HYPERFLOOD INTEGRATED INTELLIGENCE</div><h3>Flood pressure integration</h3></div><span class="soil-badge neutral" id="integrationBadge">WAITING</span></div>
 <p class="terrain-status" id="integrationStatus">Waiting for the active environmental layers to finish.</p>
 <div class="terrain-grid">
@@ -204,6 +226,15 @@
 <div class="outlook-card" data-outlook-card="48"><span>48 HOURS</span><strong id="detail48Level">—</strong><small id="detail48Reason">Waiting for evidence.</small></div>
 <div class="outlook-card" data-outlook-card="7"><span>7 DAYS</span><strong id="detail7Level">—</strong><small id="detail7Reason">Waiting for evidence.</small></div>
 </div>
+<div class="historical-context-card" id="historicalContextCard">
+  <div class="historical-context-heading"><span>🌍</span><div><p class="panel-label">PAST · NASA HISTORICAL CONTEXT</p><strong>Changing environmental baseline</strong></div></div>
+  <div class="historical-context-grid">
+    <div><small>PRECIPITATION TREND</small><strong id="historicalContextRain">Awaiting historical analysis</strong></div>
+    <div><small>TEMPERATURE TREND</small><strong id="historicalContextTemp">Awaiting historical analysis</strong></div>
+  </div>
+  <p id="historicalContextPeriod">Period: selected NASA historical window</p>
+  <p class="historical-context-note" id="historicalContextNote">Historical trends provide long-term context alongside today's conditions and forecast rainfall. They are not directly added to the flood-pressure score.</p>
+</div>
 <div class="runoff-finding neutral" id="warningFinding"><strong>WAITING FOR FLOOD OUTLOOK</strong><p>HyperFlood will explain which environmental signals are driving the selected outlook.</p></div>
 <p class="data-note">Prototype decision-support indicator. It is not a calibrated flood probability, official government warning or emergency alert.</p>
 </div></li>
@@ -212,7 +243,7 @@
 <div class="warning-card prototype-warning">
 <p class="panel-label">HYPERFLOOD STATUS</p>
 <h3>HyperFlood intelligence active</h3>
-<p>HyperFlood investigates the <strong>past</strong> with NASA historical trends, understands the <strong>present</strong> through terrain, soil, waterways and recent rainfall, looks toward the <strong>future</strong> with forecast precipitation, and connects those signals into an explainable prototype flood outlook.</p>
+<p>HyperFlood connects NASA historical precipitation and temperature trends (<strong>past</strong>) with terrain, soil, waterways and recent rainfall (<strong>present</strong>), forecast precipitation (<strong>future</strong>) and an explainable flood outlook (<strong>action</strong>). Historical trends describe a changing baseline; they are not treated as direct short-term flood triggers.</p>
 </div>
 </aside>
 </div>

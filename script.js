@@ -563,6 +563,13 @@ const trendSignificance = document.getElementById("trendSignificance");
 const trendFinding = document.getElementById("trendFinding");
 const baselineCard = document.getElementById("baselineCard");
 const baselineText = document.getElementById("baselineText");
+const baselineRainSummary = document.getElementById("baselineRainSummary");
+const baselineTempSummary = document.getElementById("baselineTempSummary");
+const baselinePeriodSummary = document.getElementById("baselinePeriodSummary");
+const historicalContextRain = document.getElementById("historicalContextRain");
+const historicalContextTemp = document.getElementById("historicalContextTemp");
+const historicalContextPeriod = document.getElementById("historicalContextPeriod");
+const historicalContextNote = document.getElementById("historicalContextNote");
 let trendVariable = "rain";
 let trendData = null;
 let trendRequestId = 0;
@@ -677,6 +684,37 @@ function drawTrendChart(rows, key, fit) {
   ctx.fillStyle="#607783";ctx.fillText(String(rows[0].year),pad.l,h-8);const last=String(rows.at(-1).year);ctx.fillText(last,w-pad.r-ctx.measureText(last).width,h-8);
 }
 
+function trendSummaryFor(key) {
+  if (!trendData?.length || trendData.length < 5) return null;
+  const fit = linearTrend(trendData, key);
+  const threshold = key === "rain" ? 0.1 : 0.005;
+  const direction = Math.abs(fit.slope) < threshold ? "Broadly stable" : fit.slope > 0 ? "Increasing" : "Decreasing";
+  const confidence = fit.p < 0.05 ? "statistically significant" : "not statistically significant";
+  const unit = key === "rain" ? "mm/year" : "°C/year";
+  const slope = `${fit.slope > 0 ? "+" : ""}${key === "rain" ? fit.slope.toFixed(1) : fit.slope.toFixed(3)} ${unit}`;
+  return { fit, direction, confidence, slope, period: `${trendData[0].year}–${trendData.at(-1).year}` };
+}
+
+function updateHistoricalContextUI() {
+  const rain = trendSummaryFor("rain");
+  const temp = trendSummaryFor("temp");
+  const period = rain?.period || temp?.period || null;
+  const format = item => item ? `${item.direction}${item.direction === "Broadly stable" ? "" : ` · ${item.confidence === "statistically significant" ? "significant" : "not significant"}`}` : "Awaiting NASA data";
+  if (baselineRainSummary) baselineRainSummary.textContent = format(rain);
+  if (baselineTempSummary) baselineTempSummary.textContent = format(temp);
+  if (baselinePeriodSummary) baselinePeriodSummary.textContent = period ? `Historical window: ${period} · ${trendData.length} complete annual values · NASA POWER` : `Selected historical period: ${trendPeriod?.value || 25} years · NASA POWER`;
+  if (historicalContextRain) historicalContextRain.textContent = rain ? `${format(rain)} (${rain.slope})` : "Awaiting historical analysis";
+  if (historicalContextTemp) historicalContextTemp.textContent = temp ? `${format(temp)} (${temp.slope})` : "Awaiting historical analysis";
+  if (historicalContextPeriod) historicalContextPeriod.textContent = period ? `NASA historical window: ${period} (${trendData.length} complete years)` : `NASA historical window: ${trendPeriod?.value || 25}-year selection; waiting for valid trend data.`;
+  if (historicalContextNote) {
+    if (rain && temp) {
+      historicalContextNote.textContent = `Over ${period}, precipitation is ${rain.direction.toLowerCase()} and temperature is ${temp.direction.toLowerCase()}. Trend significance is shown separately; this context helps interpret present conditions but is not directly added to the short-term flood-pressure score.`;
+    } else {
+      historicalContextNote.textContent = "Historical trends provide long-term context alongside today's conditions and forecast rainfall. They are not directly added to the flood-pressure score.";
+    }
+  }
+}
+
 function renderTrend() {
   if(!trendData?.length) return;
   const key=trendVariable, fit=linearTrend(trendData,key), unit=key==="rain"?"mm/year":"°C/year", changeUnit=key==="rain"?"mm":"°C";
@@ -696,12 +734,13 @@ function renderTrend() {
       ? `Long-term precipitation is ${dir}. This is Earth-system context only; HyperFlood does not add the trend directly to today's flood-pressure score.`
       : `Long-term temperature is ${dir}. This changes the environmental baseline but is not treated as a direct short-term flood trigger.`;
   }
+  updateHistoricalContextUI();
   drawTrendChart(trendData,key,fit);
 }
 
 async function analyseHistoricalTrends(lat,lon){
   if(!trendStatus)return; const requestId=++trendRequestId; currentAnalysisLat=lat;currentAnalysisLon=lon;
-  trendStatus.textContent="Contacting NASA POWER and building the historical time series…";
+  trendStatus.textContent="Contacting NASA POWER and building the historical time series…";trendData=null;updateHistoricalContextUI();
   setRoadmapState("trends", "loading");
   trendFinding.className="trend-finding neutral";trendFinding.querySelector("strong").textContent="ANALYSING NASA DATA";trendFinding.querySelector("p").textContent="Aggregating monthly observations into complete annual values and calculating a linear trend.";
   try{const raw=await fetchNasaPowerMonthly(lat,lon,Number(trendPeriod.value));if(requestId!==trendRequestId)return;trendData=monthlyToAnnual(raw);if(trendData.length<5)throw new Error("Not enough complete annual observations.");trendStatus.textContent=`NASA historical analysis complete: ${trendData.length} complete years.`;renderTrend();setRoadmapState("trends", "done");}
@@ -1249,7 +1288,7 @@ updateAnalysisPoint = function(lat,lon,label){
 
 
 // ==========================================================
-// V14 — FINAL FLOOD EARLY-WARNING OUTLOOK
+// V15 — HISTORICAL CONTEXT CONNECTED TO FINAL FLOOD EARLY-WARNING OUTLOOK
 // Past → Present → Future → Action
 // The warning is a transparent prototype decision-support signal.
 // ==========================================================
