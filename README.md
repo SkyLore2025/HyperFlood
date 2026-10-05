@@ -1,4 +1,4 @@
-# HyperFlood V17 — Earth-System Trends to Hyperlocal Flood Outlook
+# HyperFlood V18 — Earth-System Trends to Hyperlocal Flood Outlook
 
 HyperFlood connects long-term NASA precipitation and temperature trends (PAST) with present environmental layers, near-future rainfall forecasts, and an explainable prototype flood outlook (ACTION).
 
@@ -23,3 +23,11 @@ The 25-year NASA POWER historical window now also establishes a seasonal rainfal
 
 ## V17 change
 The blinking Flood Early-Warning bar now directly links the selected forecast window to the 25-year NASA seasonal rainfall baseline. It shows the historical expected rainfall for that window and the forecast difference from that reference. The baseline is explanatory context and is not added as arbitrary points to the short-term Flood Pressure Index.
+
+
+## V18 workspace layout
+- Flood Early Warning moved from the bottom into a left sidebar.
+- Collapsed warning state is a narrow, full-height vertical tab reading “FLOOD EARLY WARNING”.
+- The warning tab keeps the existing blinking behavior and severity state; clicking it expands the complete warning panel.
+- The right analysis panel can be hidden. When hidden, it becomes a compact 01–08 status rail showing the existing loading spinner / tick / unavailable state.
+- Both sidebars preserve their existing functionality and analysis logic; this release changes the workspace presentation rather than the flood calculations.

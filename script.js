@@ -493,11 +493,16 @@ function setRoadmapState(key, state) {
   item.classList.remove("pending", "loading", "done", "error");
   item.classList.add(state);
   const stateLabel = item.querySelector(".roadmap-state");
-  if (stateLabel) {
-    stateLabel.setAttribute(
-      "aria-label",
-      state === "done" ? "Complete" : state === "loading" ? "Loading" : state === "error" ? "Unavailable" : "Waiting"
-    );
+  const stateText = state === "done" ? "Complete" : state === "loading" ? "Loading" : state === "error" ? "Unavailable" : "Waiting";
+  if (stateLabel) stateLabel.setAttribute("aria-label", stateText);
+
+  // Keep the collapsed right-side rail synchronized with the full roadmap.
+  const railItem = document.querySelector(`[data-rail-key="${key}"]`);
+  if (railItem) {
+    railItem.classList.remove("pending", "loading", "done", "error");
+    railItem.classList.add(state);
+    const railState = railItem.querySelector(".roadmap-state");
+    if (railState) railState.setAttribute("aria-label", stateText);
   }
   if (key !== "integration" && typeof scheduleFloodPressureIntegration === "function") scheduleFloodPressureIntegration();
 }
@@ -528,8 +533,12 @@ function setWarningSeverity(level = "normal") {
   if (!warningBar) return;
   const levels = ["normal", "low", "moderate", "high", "severe"];
   const safeLevel = levels.includes(level) ? level : "normal";
-  levels.forEach(item => warningBar.classList.remove(`severity-${item}`));
+  levels.forEach(item => {
+    warningBar.classList.remove(`severity-${item}`);
+    document.getElementById("warningExpandButton")?.classList.remove(`severity-${item}`);
+  });
   warningBar.classList.add(`severity-${safeLevel}`);
+  document.getElementById("warningExpandButton")?.classList.add(`severity-${safeLevel}`);
 }
 
 warningToggleButtons.forEach((button) => {
@@ -545,6 +554,7 @@ warningToggleButtons.forEach((button) => {
 if (warningBar && blinkToggle) {
   blinkToggle.addEventListener("change", () => {
     warningBar.classList.toggle("blink-enabled", blinkToggle.checked);
+    document.getElementById("warningExpandButton")?.classList.toggle("blink-enabled", blinkToggle.checked);
   });
 }
 
@@ -1090,6 +1100,59 @@ updateAnalysisPoint = function(lat, lon, label) {
   });
 })();
 
+
+// ==========================================================
+// V18 SIDEBAR COLLAPSE / EXPAND CONTROLS
+// The map remains the central workspace. The early-warning panel can
+// expand from the left, while the analysis panel can collapse to a
+// compact 01–08 status rail on the right.
+// ==========================================================
+(function setupSidebarControls() {
+  const mapLayout = document.getElementById("mapLayout");
+  const leftWarningPanel = document.getElementById("leftWarningPanel");
+  const warningExpandButton = document.getElementById("warningExpandButton");
+  const infoPanel = document.getElementById("infoPanel");
+  const infoCollapseButton = document.getElementById("infoCollapseButton");
+  const infoExpandButton = document.getElementById("infoExpandButton");
+  if (!mapLayout || !leftWarningPanel || !warningExpandButton || !infoPanel || !infoCollapseButton || !infoExpandButton) return;
+
+  function setWarningOpen(open) {
+    mapLayout.classList.toggle("warning-open", open);
+    leftWarningPanel.classList.toggle("open", open);
+    warningExpandButton.setAttribute("aria-expanded", String(open));
+  }
+
+  function setInfoOpen(open) {
+    mapLayout.classList.toggle("info-open", open);
+    infoPanel.classList.toggle("open", open);
+    infoCollapseButton.setAttribute("aria-expanded", String(open));
+    infoExpandButton.setAttribute("aria-expanded", String(open));
+  }
+
+  warningExpandButton.addEventListener("click", () => setWarningOpen(true));
+  infoCollapseButton.addEventListener("click", () => setInfoOpen(false));
+  infoExpandButton.addEventListener("click", () => setInfoOpen(true));
+
+  // Clicking outside the warning is intentionally not used to close it;
+  // the user gets a stable hide/show control and the warning keeps its state.
+  setWarningOpen(false);
+  setInfoOpen(true);
+
+  // On narrow screens, keep both panels in their normal stacked/mobile form.
+  const media = window.matchMedia("(max-width: 900px)");
+  const applyResponsiveState = () => {
+    if (media.matches) {
+      leftWarningPanel.classList.remove("open");
+      infoPanel.classList.remove("open");
+    } else {
+      // Restore the desktop layout state without changing the user's selected
+      // severity, warning window or roadmap progress.
+      setWarningOpen(mapLayout.classList.contains("warning-open"));
+      setInfoOpen(mapLayout.classList.contains("info-open"));
+    }
+  };
+  media.addEventListener?.("change", applyResponsiveState);
+})();
 
 // ==========================================================
 // V11 RECENT PRECIPITATION — NASA POWER Daily API
