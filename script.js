@@ -1353,9 +1353,11 @@ updateAnalysisPoint = function(lat,lon,label){
 
 
 // ==========================================================
-// V15 — HISTORICAL CONTEXT CONNECTED TO FINAL FLOOD EARLY-WARNING OUTLOOK
+// V17 — HISTORICAL BASELINE LINKED DIRECTLY TO FINAL FLOOD EARLY-WARNING OUTLOOK
 // Past → Present → Future → Action
 // The warning is a transparent prototype decision-support signal.
+// V17 adds a seasonal historical reference beside the live warning without adding
+// arbitrary historical points to the short-term flood-pressure score.
 // ==========================================================
 const warningDetailStatus = document.getElementById("warningDetailStatus");
 const warningBadge = document.getElementById("warningBadge");
@@ -1380,6 +1382,48 @@ function metricNumber(el) {
   if (!el) return null;
   const m = String(el.textContent || "").replace(/,/g, "").match(/-?\d+(?:\.\d+)?/);
   return m ? Number(m[0]) : null;
+}
+
+const warningBaselineValue = document.getElementById("warningBaselineValue");
+const warningBaselineComparison = document.getElementById("warningBaselineComparison");
+
+function historicalBaselineForWindow(windowName) {
+  const monthIndex = new Date().getMonth();
+  const climate = trendMonthly?.[monthIndex];
+  if (!climate || !Number.isFinite(climate.expected7d)) return null;
+  const days = windowName === "24 hours" ? 1 : windowName === "48 hours" ? 2 : 7;
+  const expected = climate.expected7d * days / 7;
+  return { expected, monthIndex, days };
+}
+
+function describeBaselineComparison(forecast, baseline) {
+  if (!baseline || !Number.isFinite(forecast)) return { label: "Historical baseline unavailable", pct: null };
+  const reference = Math.max(baseline.expected, 0.1);
+  const pct = ((forecast - reference) / reference) * 100;
+  let label = "near the historical seasonal baseline";
+  if (pct >= 100) label = "well above the historical seasonal baseline";
+  else if (pct >= 25) label = "above the historical seasonal baseline";
+  else if (pct <= -25) label = "below the historical seasonal baseline";
+  return { label, pct };
+}
+
+function updateWarningBaselineUI(windowName, forecast) {
+  if (!warningBaselineValue || !warningBaselineComparison) return;
+  const baseline = historicalBaselineForWindow(windowName);
+  const monthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  if (!baseline) {
+    warningBaselineValue.textContent = "Awaiting NASA historical baseline";
+    warningBaselineComparison.textContent = "The seasonal reference will appear when the historical record is available.";
+    return;
+  }
+  warningBaselineValue.textContent = `${baseline.expected.toFixed(1)} mm expected`;
+  if (!Number.isFinite(forecast)) {
+    warningBaselineComparison.textContent = `${monthNames[baseline.monthIndex]} seasonal reference · waiting for forecast rainfall.`;
+    return;
+  }
+  const comparison = describeBaselineComparison(forecast, baseline);
+  const sign = comparison.pct >= 0 ? "+" : "";
+  warningBaselineComparison.textContent = `${forecast.toFixed(1)} mm forecast · ${sign}${comparison.pct.toFixed(0)}% vs ${monthNames[baseline.monthIndex]} historical reference`;
 }
 
 function buildWarningOutlook() {
@@ -1454,7 +1498,15 @@ function buildWarningOutlook() {
     if (forecastPoints >= 20) reason += ` Forecast rainfall adds strong pressure (${f.value.toFixed(1)} mm).`;
     else if (forecastPoints >= 10) reason += ` Forecast rainfall adds moderate pressure (${f.value.toFixed(1)} mm).`;
     else reason += ` Forecast rainfall adds limited pressure (${f.value.toFixed(1)} mm).`;
-    result[window] = {score, level, reason, forecast:f.value};
+    const baseline = historicalBaselineForWindow(window);
+    const comparison = describeBaselineComparison(f.value, baseline);
+    if (baseline && comparison.pct !== null) {
+      const sign = comparison.pct >= 0 ? "+" : "";
+      reason += ` Forecast rainfall is ${comparison.label} (${sign}${comparison.pct.toFixed(0)}% versus the historical seasonal reference of ${baseline.expected.toFixed(1)} mm).`;
+    } else {
+      reason += ` Historical seasonal baseline is unavailable for this outlook window.`;
+    }
+    result[window] = {score, level, reason, forecast:f.value, baseline:baseline?.expected ?? null, baselinePct:comparison.pct};
   }
   finalOutlook = result;
   const selected = result[selectedWarningWindow] || result["24 hours"];
@@ -1475,6 +1527,7 @@ function buildWarningOutlook() {
 
   warningLevel.textContent = selected.level.label;
   warningStatus.textContent = `${selected.reason} Prototype decision-support outlook.`;
+  updateWarningBaselineUI(selectedWarningWindow, selected.forecast);
   setWarningSeverity(selected.level.cls);
   setRoadmapState("risk", "done");
 }
@@ -1494,6 +1547,7 @@ function renderSelectedWarningWindow() {
   warningFinding.className = `runoff-finding ${selected.level.cls}`;
   warningFinding.querySelector("strong").textContent = `${selected.level.label} FLOOD EARLY-WARNING OUTLOOK`;
   warningFinding.querySelector("p").textContent = `${selected.reason} This is a transparent screening signal, not a probability of flooding or an official warning.`;
+  updateWarningBaselineUI(selectedWarningWindow, selected.forecast);
 }
 
 function scheduleFinalOutlook() {
@@ -1507,6 +1561,7 @@ updateAnalysisPoint = function(lat, lon, label) {
   setRoadmapState("risk", "loading");
   warningLevel.textContent = "ANALYSING";
   warningStatus.textContent = "Analysing current environmental conditions and forecast rainfall…";
+  updateWarningBaselineUI(selectedWarningWindow, null);
   setWarningSeverity("normal");
   v14BaseUpdateAnalysisPoint(lat, lon, label);
   scheduleFinalOutlook();

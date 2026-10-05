@@ -1,4 +1,4 @@
-# HyperFlood V16 — Earth-System Trends to Hyperlocal Flood Outlook
+# HyperFlood V17 — Earth-System Trends to Hyperlocal Flood Outlook
 
 HyperFlood connects long-term NASA precipitation and temperature trends (PAST) with present environmental layers, near-future rainfall forecasts, and an explainable prototype flood outlook (ACTION).
 
@@ -19,3 +19,7 @@ Historical trends are shown as long-term Earth-system context and are not added 
 
 ## V16 historical baseline
 The 25-year NASA POWER historical window now also establishes a seasonal rainfall baseline for the current month. HyperFlood shows the historical monthly average, a derived 7-day equivalent baseline, recent 7-day rainfall and forecast 7-day rainfall, with a contextual comparison. This baseline is informational only and does not alter the existing Flood Pressure Index or early-warning scoring.
+
+
+## V17 change
+The blinking Flood Early-Warning bar now directly links the selected forecast window to the 25-year NASA seasonal rainfall baseline. It shows the historical expected rainfall for that window and the forecast difference from that reference. The baseline is explanatory context and is not added as arbitrary points to the short-term Flood Pressure Index.
