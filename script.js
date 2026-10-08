@@ -1118,39 +1118,44 @@ updateAnalysisPoint = function(lat, lon, label) {
   if (!mapLayout || !leftWarningPanel || !warningExpandButton || !warningCollapseButton || !infoPanel || !infoCollapseButton || !infoExpandButton) return;
 
   function setWarningOpen(open) {
-    mapLayout.classList.toggle("warning-open", open);
-    leftWarningPanel.classList.toggle("open", open);
-    warningExpandButton.setAttribute("aria-expanded", String(open));
+    const isOpen = Boolean(open);
+    mapLayout.classList.toggle("warning-open", isOpen);
+    leftWarningPanel.classList.toggle("open", isOpen);
+    warningExpandButton.setAttribute("aria-expanded", String(isOpen));
+    warningCollapseButton.setAttribute("aria-expanded", String(isOpen));
   }
 
   function setInfoOpen(open) {
-    mapLayout.classList.toggle("info-open", open);
-    infoPanel.classList.toggle("open", open);
-    infoCollapseButton.setAttribute("aria-expanded", String(open));
-    infoExpandButton.setAttribute("aria-expanded", String(open));
+    const isOpen = Boolean(open);
+    mapLayout.classList.toggle("info-open", isOpen);
+    infoPanel.classList.toggle("open", isOpen);
+    infoCollapseButton.setAttribute("aria-expanded", String(isOpen));
+    infoExpandButton.setAttribute("aria-expanded", String(isOpen));
   }
 
-  warningExpandButton.addEventListener("click", () => setWarningOpen(true));
-  warningCollapseButton.addEventListener("click", () => setWarningOpen(false));
-  infoCollapseButton.addEventListener("click", () => setInfoOpen(false));
-  infoExpandButton.addEventListener("click", () => setInfoOpen(true));
+  // Use direct listeners plus a delegated fallback so the controls remain
+  // clickable even if another UI layer changes during a map update.
+  warningExpandButton.onclick = () => setWarningOpen(true);
+  warningCollapseButton.onclick = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setWarningOpen(false);
+  };
+  infoCollapseButton.onclick = () => setInfoOpen(false);
+  infoExpandButton.onclick = () => setInfoOpen(true);
 
-  // Clicking outside the warning is intentionally not used to close it;
-  // the user gets a stable hide/show control and the warning keeps its state.
+  // Desktop starts with both side panels collapsed/open exactly as in V18:
+  // warning collapsed, details expanded.
   setWarningOpen(false);
   setInfoOpen(true);
 
-  // On narrow screens, keep both panels in their normal stacked/mobile form.
   const media = window.matchMedia("(max-width: 900px)");
   const applyResponsiveState = () => {
     if (media.matches) {
       leftWarningPanel.classList.remove("open");
+      mapLayout.classList.remove("warning-open");
       infoPanel.classList.remove("open");
-    } else {
-      // Restore the desktop layout state without changing the user's selected
-      // severity, warning window or roadmap progress.
-      setWarningOpen(mapLayout.classList.contains("warning-open"));
-      setInfoOpen(mapLayout.classList.contains("info-open"));
+      mapLayout.classList.add("info-open");
     }
   };
   media.addEventListener?.("change", applyResponsiveState);

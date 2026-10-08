@@ -28,11 +28,14 @@ button { cursor: pointer; }
 
 .search-screen {
   display: grid;
+  height: 100vh;
+  min-height: 100vh;
+  align-content: start;
   overflow-y: auto;
   overflow-x: hidden;
   box-sizing: border-box;
   place-items: center;
-  padding: 32px 20px;
+  padding: 32px 20px 60px;
   background:
     radial-gradient(circle at 15% 20%, rgba(39,183,217,.16), transparent 30%),
     radial-gradient(circle at 85% 80%, rgba(23,105,170,.13), transparent 32%),
@@ -652,7 +655,8 @@ body { overflow: hidden; }
     position: absolute;
     top: 8px;
     right: 8px;
-    z-index: 5;
+    z-index: 9999;
+    pointer-events: auto;
     border: 1px solid #d2e0e6;
     background: rgba(255,255,255,.9);
     color: #315b6b;
@@ -821,4 +825,24 @@ body { overflow: hidden; }
   .info-panel-top, .info-collapsed-rail { display:none !important; }
   .info-panel-content { display:block; }
   .info-panel { padding:22px; }
+}
+
+
+/* V18.1 targeted fixes — do not alter analysis functionality. */
+@media (min-width: 901px) {
+  .search-screen {
+    height: 100vh;
+    min-height: 100vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    align-content: start;
+  }
+  .warning-collapse-button {
+    pointer-events: auto !important;
+    z-index: 99999 !important;
+  }
+  .left-warning-panel:not(.open) .warning-expanded-wrap { display: none !important; }
+  .left-warning-panel.open .warning-expanded-wrap { display: block !important; }
+  .left-warning-panel:not(.open) .warning-collapsed-tab { display: flex !important; }
+  .left-warning-panel.open .warning-collapsed-tab { display: none !important; }
 }
