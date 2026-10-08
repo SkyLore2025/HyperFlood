@@ -28,6 +28,9 @@ button { cursor: pointer; }
 
 .search-screen {
   display: grid;
+  overflow-y: auto;
+  overflow-x: hidden;
+  box-sizing: border-box;
   place-items: center;
   padding: 32px 20px;
   background:
@@ -642,9 +645,30 @@ body { overflow: hidden; }
     50% { filter: brightness(.90); }
   }
 
-  .warning-expanded-wrap { display: none; height: 100%; min-height: 0; }
+  .warning-expanded-wrap { display: none; height: 100%; min-height: 0; position: relative; }
   .left-warning-panel.open .warning-collapsed-tab { display: none; }
   .left-warning-panel.open .warning-expanded-wrap { display: block; }
+  .warning-collapse-button {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 5;
+    border: 1px solid #d2e0e6;
+    background: rgba(255,255,255,.9);
+    color: #315b6b;
+    border-radius: 8px;
+    padding: 6px 8px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font: inherit;
+    font-size: 10px;
+    font-weight: 850;
+    cursor: pointer;
+  }
+  .warning-collapse-button span:first-child { font-size: 16px; line-height: 9px; }
+  .warning-collapse-button:hover { background: white; }
+  .warning-collapse-button:focus-visible { outline: 2px solid #1769aa; outline-offset: 2px; }
   .left-warning-panel .warning-bar {
     position: relative;
     height: 100%;
@@ -662,7 +686,7 @@ body { overflow: hidden; }
     border-right: 0;
     box-shadow: none;
   }
-  .left-warning-panel .warning-bar-heading { flex: 0 0 auto; }
+  .left-warning-panel .warning-bar-heading { flex: 0 0 auto; padding-right: 82px; }
   .left-warning-panel .warning-placeholder { flex: 0 0 auto; }
   .left-warning-panel .warning-baseline { flex: 0 0 auto; border-left: 0; border-top: 1px solid rgba(80,120,90,.22); padding: 10px 2px 2px; }
   .left-warning-panel .warning-controls { margin-top: auto; flex: 0 0 auto; flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 9px; }
@@ -791,7 +815,8 @@ body { overflow: hidden; }
      are hidden so the existing touch-friendly layout remains usable. */
   .left-warning-panel { display: contents; }
   .warning-collapsed-tab { display: none !important; }
-  .warning-expanded-wrap { display: block !important; height: auto; }
+  .warning-expanded-wrap { display: block !important; height: auto; position: relative; }
+  .warning-collapse-button { display: none; }
   .left-warning-panel .warning-bar { display: grid; }
   .info-panel-top, .info-collapsed-rail { display:none !important; }
   .info-panel-content { display:block; }

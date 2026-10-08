@@ -1111,10 +1111,11 @@ updateAnalysisPoint = function(lat, lon, label) {
   const mapLayout = document.getElementById("mapLayout");
   const leftWarningPanel = document.getElementById("leftWarningPanel");
   const warningExpandButton = document.getElementById("warningExpandButton");
+  const warningCollapseButton = document.getElementById("warningCollapseButton");
   const infoPanel = document.getElementById("infoPanel");
   const infoCollapseButton = document.getElementById("infoCollapseButton");
   const infoExpandButton = document.getElementById("infoExpandButton");
-  if (!mapLayout || !leftWarningPanel || !warningExpandButton || !infoPanel || !infoCollapseButton || !infoExpandButton) return;
+  if (!mapLayout || !leftWarningPanel || !warningExpandButton || !warningCollapseButton || !infoPanel || !infoCollapseButton || !infoExpandButton) return;
 
   function setWarningOpen(open) {
     mapLayout.classList.toggle("warning-open", open);
@@ -1130,6 +1131,7 @@ updateAnalysisPoint = function(lat, lon, label) {
   }
 
   warningExpandButton.addEventListener("click", () => setWarningOpen(true));
+  warningCollapseButton.addEventListener("click", () => setWarningOpen(false));
   infoCollapseButton.addEventListener("click", () => setInfoOpen(false));
   infoExpandButton.addEventListener("click", () => setInfoOpen(true));
 
