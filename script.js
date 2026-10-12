@@ -586,9 +586,15 @@ const baseline7DayExpected = document.getElementById("baseline7DayExpected");
 const baselineRecent7Day = document.getElementById("baselineRecent7Day");
 const baselineForecast7Day = document.getElementById("baselineForecast7Day");
 const baselineComparison = document.getElementById("baselineComparison");
+const baselineHighestRain24 = document.getElementById("baselineHighestRain24");
+const baselineLowestRain24 = document.getElementById("baselineLowestRain24");
+const baselineHighestTemp24 = document.getElementById("baselineHighestTemp24");
+const baselineLowestTemp24 = document.getElementById("baselineLowestTemp24");
 let trendVariable = "rain";
 let trendData = null;
 let trendMonthly = null;
+let trendSeasonalBaseline = null;
+let seasonalBaselineLoading = false;
 let trendRequestId = 0;
 let currentAnalysisLat = null;
 let currentAnalysisLon = null;
@@ -744,43 +750,95 @@ function updateHistoricalContextUI() {
   if (historicalContextPeriod) historicalContextPeriod.textContent = period ? `NASA historical window: ${period} (${trendData.length} complete years)` : `NASA historical window: ${trendPeriod?.value || 25}-year selection; waiting for valid trend data.`;
   if (historicalContextNote) {
     if (rain && temp) {
-      historicalContextNote.textContent = `Over ${period}, precipitation is ${rain.direction.toLowerCase()} and temperature is ${temp.direction.toLowerCase()}. The same NASA record also establishes a seasonal rainfall baseline for the current month. Trend significance is shown separately; neither the trend nor baseline is directly added to the short-term flood-pressure score.`;
+      historicalContextNote.textContent = `Over ${period}, precipitation is ${rain.direction.toLowerCase()} and temperature is ${temp.direction.toLowerCase()}. NASA daily observations also establish a seasonal baseline for the 31-day window centred on the query date (±15 days). Trend significance is shown separately; neither the trend nor baseline is directly added to the short-term flood-pressure score.`;
     } else {
       historicalContextNote.textContent = "Historical trends provide long-term context alongside today's conditions and forecast rainfall. They are not directly added to the flood-pressure score.";
     }
   }
 }
 
+function seasonalWindowLabel(month, day) {
+  const now = new Date();
+  const center = new Date(now.getFullYear(), month - 1, day);
+  const from = new Date(center); from.setDate(from.getDate() - 15);
+  const to = new Date(center); to.setDate(to.getDate() + 15);
+  const fmt = d => d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  return `${fmt(from)} – ${fmt(to)} (±15 days)`;
+}
+
+async function fetchNasaSeasonalBaseline(lat, lon, yearsBack, requestId) {
+  const now = new Date();
+  const url = new URL("/api/seasonal-baseline", window.location.origin);
+  url.searchParams.set("lat", Number(lat).toFixed(5));
+  url.searchParams.set("lon", Number(lon).toFixed(5));
+  url.searchParams.set("years", String(yearsBack));
+  url.searchParams.set("month", String(now.getMonth() + 1));
+  url.searchParams.set("day", String(now.getDate()));
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 60000);
+  try {
+    const response = await fetch(url.toString(), { method: "GET", headers: { Accept: "application/json" }, cache: "no-store", signal: controller.signal });
+    const text = await response.text();
+    let json = null;
+    try { json = JSON.parse(text); } catch (_) {}
+    if (!response.ok || !json?.ok) {
+      const message = json?.error || json?.detail || text.slice(0, 250);
+      throw new Error(`Seasonal baseline request failed (${response.status})${message ? `: ${message}` : ""}`);
+    }
+    if (requestId === trendRequestId) {
+      trendSeasonalBaseline = json;
+      seasonalBaselineLoading = false;
+      updateHistoricalRainfallBaseline();
+      updateWarningBaselineUI(selectedWarningWindow || "24 hours", metricNumber?.(forecast7d));
+      if (finalOutlook) buildWarningOutlook();
+    }
+    return json;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 function updateHistoricalRainfallBaseline() {
   if (!baselineMonthLabel || !baselineMonthlyAverage || !baseline7DayExpected) return;
-  const monthIndex = new Date().getMonth();
-  const monthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"];
-  const climate = trendMonthly?.[monthIndex];
-  baselineMonthLabel.textContent = monthNames[monthIndex];
+  const now = new Date();
+  const month = now.getMonth() + 1;
+  const day = now.getDate();
+  baselineMonthLabel.textContent = seasonalWindowLabel(month, day);
+  const climate = trendSeasonalBaseline;
   if (!climate) {
-    baselineMonthlyAverage.textContent = "—";
+    baselineMonthlyAverage.textContent = seasonalBaselineLoading ? "Loading NASA daily data…" : "—";
     baseline7DayExpected.textContent = "—";
-    if (baselineRecent7Day) baselineRecent7Day.textContent = "—";
-    if (baselineForecast7Day) baselineForecast7Day.textContent = "—";
-    if (baselineComparison) baselineComparison.textContent = "Historical monthly baseline unavailable for this period.";
+    if (baselineHighestRain24) baselineHighestRain24.textContent = "—";
+    if (baselineLowestRain24) baselineLowestRain24.textContent = "—";
+    if (baselineHighestTemp24) baselineHighestTemp24.textContent = "—";
+    if (baselineLowestTemp24) baselineLowestTemp24.textContent = "—";
+    if (baselineRecent7Day) baselineRecent7Day.textContent = "Waiting";
+    if (baselineForecast7Day) baselineForecast7Day.textContent = "Waiting";
+    if (baselineComparison) baselineComparison.textContent = seasonalBaselineLoading
+      ? "Calculating the historical 31-day window and daily rainfall/temperature extremes from NASA POWER daily data."
+      : "NASA daily seasonal data is unavailable. Long-term trends and the other HyperFlood layers remain available.";
     return;
   }
-  baselineMonthlyAverage.textContent = `${climate.meanMonthly.toFixed(1)} mm`;
-  baseline7DayExpected.textContent = `${climate.expected7d.toFixed(1)} mm`;
+  baselineMonthlyAverage.textContent = `${Number(climate.mean31DayRain).toFixed(1)} mm`;
+  baseline7DayExpected.textContent = `${Number(climate.expected7d).toFixed(1)} mm`;
+  if (baselineHighestRain24) baselineHighestRain24.textContent = `${Number(climate.highest24hRain).toFixed(1)} mm`;
+  if (baselineLowestRain24) baselineLowestRain24.textContent = `${Number(climate.lowest24hRain).toFixed(1)} mm`;
+  if (baselineHighestTemp24) baselineHighestTemp24.textContent = `${Number(climate.highestDailyMaxTemp).toFixed(1)} °C`;
+  if (baselineLowestTemp24) baselineLowestTemp24.textContent = `${Number(climate.lowestDailyMinTemp).toFixed(1)} °C`;
   const recent = metricNumber?.(rain7d) ?? null;
   const forecast = metricNumber?.(forecast7d) ?? null;
   if (baselineRecent7Day) baselineRecent7Day.textContent = recent === null ? "Waiting" : `${recent.toFixed(1)} mm`;
   if (baselineForecast7Day) baselineForecast7Day.textContent = forecast === null ? "Waiting" : `${forecast.toFixed(1)} mm`;
   if (baselineComparison) {
     if (forecast === null) {
-      baselineComparison.textContent = "Waiting for the 7-day forecast to compare with the historical baseline.";
+      baselineComparison.textContent = `Average rainfall and daily extremes across ${climate.yearsAnalysed} historical seasonal windows; waiting for the 7-day forecast. Daily temperatures are NASA POWER daily maximum/minimum values. The seasonal window is centred on the query date (±15 days).`;
     } else {
       const ratio = forecast / Math.max(climate.expected7d, 0.1);
       let label = "near the historical baseline";
       if (ratio >= 2) label = "well above the historical baseline";
       else if (ratio >= 1.25) label = "above the historical baseline";
       else if (ratio < 0.75) label = "below the historical baseline";
-      baselineComparison.textContent = `The next 7 days are ${label} for ${monthNames[monthIndex]}, based on the selected ${trendData?.length || trendPeriod?.value || 25}-year NASA window. This is contextual comparison, not an added flood-risk score.`;
+      baselineComparison.textContent = `The next 7 days are ${label} for the ±15-day seasonal window, based on ${climate.yearsAnalysed} historical years. Highest/lowest daily rainfall and temperature are extremes within those same windows. Context only; not added to the flood-pressure score.`;
     }
   }
 }
@@ -811,10 +869,10 @@ function renderTrend() {
 
 async function analyseHistoricalTrends(lat,lon){
   if(!trendStatus)return; const requestId=++trendRequestId; currentAnalysisLat=lat;currentAnalysisLon=lon;
-  trendStatus.textContent="Contacting NASA POWER and building the historical time series…";trendData=null;trendMonthly=null;updateHistoricalContextUI();updateHistoricalRainfallBaseline();
+  trendStatus.textContent="Contacting NASA POWER and building the historical time series…";trendData=null;trendMonthly=null;trendSeasonalBaseline=null;seasonalBaselineLoading=true;updateHistoricalContextUI();updateHistoricalRainfallBaseline();
   setRoadmapState("trends", "loading");
   trendFinding.className="trend-finding neutral";trendFinding.querySelector("strong").textContent="ANALYSING NASA DATA";trendFinding.querySelector("p").textContent="Aggregating monthly observations into complete annual values and calculating a linear trend.";
-  try{const raw=await fetchNasaPowerMonthly(lat,lon,Number(trendPeriod.value));if(requestId!==trendRequestId)return;trendData=monthlyToAnnual(raw);trendMonthly=monthlyClimatology(raw);if(trendData.length<5)throw new Error("Not enough complete annual observations.");trendStatus.textContent=`NASA historical analysis complete: ${trendData.length} complete years.`;renderTrend();setRoadmapState("trends", "done");}
+  try{const raw=await fetchNasaPowerMonthly(lat,lon,Number(trendPeriod.value));if(requestId!==trendRequestId)return;trendData=monthlyToAnnual(raw);trendMonthly=monthlyClimatology(raw);if(trendData.length<5)throw new Error("Not enough complete annual observations.");trendStatus.textContent=`NASA historical analysis complete: ${trendData.length} complete years. Calculating the ±15-day daily baseline…`;renderTrend();setRoadmapState("trends", "done");fetchNasaSeasonalBaseline(lat,lon,Number(trendPeriod.value),requestId).catch(error=>{if(requestId!==trendRequestId)return;console.error("NASA seasonal baseline error:",error);seasonalBaselineLoading=false;trendSeasonalBaseline=null;updateHistoricalRainfallBaseline();updateWarningBaselineUI(selectedWarningWindow || "24 hours", metricNumber?.(forecast7d));});}
   catch(e){console.error("NASA trend analysis error:",e);if(requestId!==trendRequestId)return;trendData=null;trendStatus.textContent="NASA historical data could not be loaded for this point.";trendYears.textContent=trendSlope.textContent=trendChange.textContent=trendSignificance.textContent="—";trendFinding.className="trend-finding neutral";trendFinding.querySelector("strong").textContent="DATA UNAVAILABLE";trendFinding.querySelector("p").textContent="The NASA proxy could not return usable historical data. Terrain analysis and the rest of HyperFlood remain available.";setRoadmapState("trends", "error");}
 }
 
@@ -1458,12 +1516,11 @@ const warningBaselineValue = document.getElementById("warningBaselineValue");
 const warningBaselineComparison = document.getElementById("warningBaselineComparison");
 
 function historicalBaselineForWindow(windowName) {
-  const monthIndex = new Date().getMonth();
-  const climate = trendMonthly?.[monthIndex];
-  if (!climate || !Number.isFinite(climate.expected7d)) return null;
+  const climate = trendSeasonalBaseline;
+  if (!climate || !Number.isFinite(Number(climate.expected7d))) return null;
   const days = windowName === "24 hours" ? 1 : windowName === "48 hours" ? 2 : 7;
-  const expected = climate.expected7d * days / 7;
-  return { expected, monthIndex, days };
+  const expected = Number(climate.expected7d) * days / 7;
+  return { expected, days, month: climate.queryMonth, day: climate.queryDay, yearsAnalysed: climate.yearsAnalysed };
 }
 
 function describeBaselineComparison(forecast, baseline) {
@@ -1480,7 +1537,6 @@ function describeBaselineComparison(forecast, baseline) {
 function updateWarningBaselineUI(windowName, forecast) {
   if (!warningBaselineValue || !warningBaselineComparison) return;
   const baseline = historicalBaselineForWindow(windowName);
-  const monthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"];
   if (!baseline) {
     warningBaselineValue.textContent = "Awaiting NASA historical baseline";
     warningBaselineComparison.textContent = "The seasonal reference will appear when the historical record is available.";
@@ -1488,12 +1544,12 @@ function updateWarningBaselineUI(windowName, forecast) {
   }
   warningBaselineValue.textContent = `${baseline.expected.toFixed(1)} mm expected`;
   if (!Number.isFinite(forecast)) {
-    warningBaselineComparison.textContent = `${monthNames[baseline.monthIndex]} seasonal reference · waiting for forecast rainfall.`;
+    warningBaselineComparison.textContent = `±15-day seasonal reference · waiting for forecast rainfall.`;
     return;
   }
   const comparison = describeBaselineComparison(forecast, baseline);
   const sign = comparison.pct >= 0 ? "+" : "";
-  warningBaselineComparison.textContent = `${forecast.toFixed(1)} mm forecast · ${sign}${comparison.pct.toFixed(0)}% vs ${monthNames[baseline.monthIndex]} historical reference`;
+  warningBaselineComparison.textContent = `${forecast.toFixed(1)} mm forecast · ${sign}${comparison.pct.toFixed(0)}% vs the ±15-day historical reference`;
 }
 
 function buildWarningOutlook() {

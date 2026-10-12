@@ -31,3 +31,11 @@ The blinking Flood Early-Warning bar now directly links the selected forecast wi
 - The warning tab keeps the existing blinking behavior and severity state; clicking it expands the complete warning panel.
 - The right analysis panel can be hidden. When hidden, it becomes a compact 01–08 status rail showing the existing loading spinner / tick / unavailable state.
 - Both sidebars preserve their existing functionality and analysis logic; this release changes the workspace presentation rather than the flood calculations.
+
+
+## V19 — Query-date seasonal baseline
+
+- Replaces the calendar-month rainfall reference with a 31-day seasonal window centred on the query date (15 days before through 15 days after).
+- Adds a NASA POWER daily-data endpoint at `api/seasonal-baseline.js`. It calculates average rainfall across historical 31-day windows and the highest/lowest daily rainfall plus highest daily maximum temperature and lowest daily minimum temperature within those windows.
+- The early-warning baseline now uses the same ±15-day historical reference for 24-hour, 48-hour and 7-day comparisons.
+- These statistics provide historical context only and do not change the Flood Pressure Index or its scoring. Daily temperature values are daily max/min observations; rainfall values are daily precipitation totals, not sub-daily hourly measurements.

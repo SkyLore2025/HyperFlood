@@ -77,7 +77,7 @@
 <span id="warningStatus">Waiting for the integrated flood-pressure layers to complete.</span>
 </div>
 <div class="warning-baseline" id="warningBaseline" aria-live="polite">
-<span>25-YEAR SEASONAL BASELINE</span>
+<span>HISTORICAL SEASONAL BASELINE</span>
 <strong id="warningBaselineValue">Awaiting NASA historical baseline</strong>
 <small id="warningBaselineComparison">Historical rainfall context will appear when the selected period is available.</small>
 </div>
@@ -294,15 +294,19 @@
   <p class="historical-context-note" id="historicalContextNote">Historical trends provide long-term context alongside today's conditions and forecast rainfall. They are not directly added to the flood-pressure score.</p>
 </div>
 <div class="historical-baseline-card" id="historicalBaselineCard">
-  <div class="historical-context-heading"><span>📊</span><div><p class="panel-label">25-YEAR SEASONAL RAINFALL BASELINE</p><strong>Is the coming rainfall unusual for this time of year?</strong></div></div>
-  <div class="baseline-period-row"><span>Current month</span><strong id="baselineMonthLabel">—</strong></div>
+  <div class="historical-context-heading"><span>📊</span><div><p class="panel-label">HISTORICAL SEASONAL RAINFALL BASELINE</p><strong>Is the coming rainfall unusual for this time of year?</strong></div></div>
+  <div class="baseline-period-row"><span>Seasonal window around query date</span><strong id="baselineMonthLabel">—</strong></div>
   <div class="historical-baseline-grid">
-    <div><small>HISTORICAL MONTHLY AVERAGE</small><strong id="baselineMonthlyAverage">—</strong></div>
+    <div><small>AVERAGE RAINFALL IN 31-DAY WINDOW</small><strong id="baselineMonthlyAverage">—</strong></div>
     <div><small>HISTORICAL 7-DAY EQUIVALENT</small><strong id="baseline7DayExpected">—</strong></div>
+    <div><small>HIGHEST RAINFALL IN 24 HOURS</small><strong id="baselineHighestRain24">—</strong></div>
+    <div><small>LOWEST RAINFALL IN 24 HOURS</small><strong id="baselineLowestRain24">—</strong></div>
+    <div><small>HIGHEST DAILY MAX TEMPERATURE</small><strong id="baselineHighestTemp24">—</strong></div>
+    <div><small>LOWEST DAILY MIN TEMPERATURE</small><strong id="baselineLowestTemp24">—</strong></div>
     <div><small>RECENT 7 DAYS</small><strong id="baselineRecent7Day">Waiting</strong></div>
     <div><small>FORECAST 7 DAYS</small><strong id="baselineForecast7Day">Waiting</strong></div>
   </div>
-  <p class="historical-context-note" id="baselineComparison">The selected NASA historical window will establish a seasonal rainfall baseline before current and forecast rainfall are compared with it.</p>
+  <p class="historical-context-note" id="baselineComparison">NASA daily historical data will establish a ±15-day seasonal reference around the query date, including rainfall and temperature extremes.</p>
 </div>
 <div class="runoff-finding neutral" id="warningFinding"><strong>WAITING FOR FLOOD OUTLOOK</strong><p>HyperFlood will explain which environmental signals are driving the selected outlook.</p></div>
 <p class="data-note">Prototype decision-support indicator. It is not a calibrated flood probability, official government warning or emergency alert.</p>
