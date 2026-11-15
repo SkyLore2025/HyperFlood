@@ -1197,14 +1197,14 @@ updateAnalysisPoint = function(lat, lon, label) {
   warningCollapseButton.onclick = (event) => {
     event.preventDefault();
     event.stopPropagation();
-    setWarningOpen(true);
+    setWarningOpen(false);
   };
   infoCollapseButton.onclick = () => setInfoOpen(false);
   infoExpandButton.onclick = () => setInfoOpen(true);
 
   // Desktop starts with both side panels collapsed/open exactly as in V18:
   // warning collapsed, details expanded.
-  setWarningOpen(false);
+  setWarningOpen(true);
   setInfoOpen(true);
 
   const media = window.matchMedia("(max-width: 900px)");
