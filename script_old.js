@@ -1197,7 +1197,7 @@ updateAnalysisPoint = function(lat, lon, label) {
   warningCollapseButton.onclick = (event) => {
     event.preventDefault();
     event.stopPropagation();
-    setWarningOpen(false);
+    setWarningOpen(true);
   };
   infoCollapseButton.onclick = () => setInfoOpen(false);
   infoExpandButton.onclick = () => setInfoOpen(true);
